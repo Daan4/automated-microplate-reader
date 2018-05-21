@@ -2,10 +2,19 @@ from caliper import Caliper
 from controller import Controller
 from steppermotor import StepperMotor
 import logging
+import threading
+import time
 
 controller_x = None
 controller_y = None
 steppermotor_z = None
+
+tk_root = None
+
+# Set to stop process while it's running.
+stop_process_event = threading.Event()
+# Set to pause process while it's running, clear to continue the process.
+pause_process_event = threading.Event()
 
 
 def initialise_logging():
@@ -45,16 +54,25 @@ def initialise_io():
 
 
 def initialise_gui():
-    pass
+    import gui  # Avoiding circular imports
+    global tk_root
+    tk_root = gui.tk.Tk()
+    # tk_root.iconbitmap(filepath) # optional add icon
+    tk_root.title('Automated Microplate Reader')
+    # Set up (almost) fullscreen windowed
+    #w, h = tk_root.winfo_screenwidth(), tk_root.winfo_screenheight()
+    #tk_root.geometry('%dx%d+0+0' % (w, h))
+
+    app = gui.AutomatedMicroplateReaderApplication(tk_root)
+    app.mainloop()
 
 
-def start_process(setpoints):
+def start_process(setpoints=None):
     """
 
     Args:
         setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
     """
-    global controller_x, controller_y
     for well in setpoints:
         setpoint_x, setpoint_y = well
         # Start control loops with given setpoints
@@ -65,14 +83,26 @@ def start_process(setpoints):
         controller_y.wait_until_finished()
         # Take a picture and wait a bit before moving on to the next well
         # todo implement taking pictures
+        while pause_process_event.is_set():
+            # Wait for it to clear before continuing
+            time.sleep(0.5)
+        if stop_process_event.is_set():
+            # Stop the loop. The controllers and steppermotors are stopped by stop_process
+            stop_process_event.clear()
+            break
 
 
 def stop_process():
-    pass
+    stop_process_event.set()
+    controller_x.stop()
+    controller_y.stop()
 
 
 def pause_process():
-    pass
+    if not pause_process_event.is_set():
+        pause_process_event.set()
+    else:
+        pause_process_event.clear()
 
 
 if __name__ == '__main__':
