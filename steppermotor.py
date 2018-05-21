@@ -23,8 +23,9 @@ class StepperMotor:
         # Setup microswitch interrupt
         GPIO.add_event_detect(self.pin_calibration_microswitch, GPIO.RISING, callback=self.microswitch_callback, bouncetime=microswitch_bouncetime)
 
-    def _step(self):
-        """Make a single step"""
+    def _step(self, count=None):
+        """Keep stepping until self.stop_step_event is set, or until count steps have been made if count is not None."""
+        current_step_counter = 0
         while not self.stop_step_event.is_set():
             # Keep stepping until stop_step is called
             GPIO.output(self.pin_step, GPIO.HIGH)
@@ -32,6 +33,9 @@ class StepperMotor:
             GPIO.output(self.pin_step, GPIO.LOW)
             time.sleep(1 / (2 * self.step_frequency))
             self.step_counter += 1
+            current_step_counter += 1
+            if count is not None and current_step_counter == count:
+                self.stop_step()
 
     def start_step(self):
         """Start stepping"""
