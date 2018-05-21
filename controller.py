@@ -41,6 +41,7 @@ class Controller:
     def stop(self):
         """Stop the control loop."""
         self.stop_loop_event.set()
+        self.stepper_motor.stop_step()
 
     def wait_until_finished(self):
         self.stop_loop_event.wait()
