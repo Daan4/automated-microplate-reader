@@ -12,7 +12,7 @@ class Controller:
         self.stop_loop_event = threading.Event()
         self.sample_frequency = sample_frequency
         self.setpoint = None
-        self.error_margin = error_margin
+        self.error_margin = error_margin  # Allowed margin of error between setpoint and measured position.
 
     def _control_loop(self):
         """The control loop, self.start and self.stop start and stop this control loop in it's own thread."""
@@ -41,3 +41,6 @@ class Controller:
     def stop(self):
         """Stop the control loop."""
         self.stop_loop_event.set()
+
+    def wait_until_finished(self):
+        self.stop_loop_event.wait()
