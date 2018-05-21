@@ -1,4 +1,5 @@
 import threading
+import time
 
 
 class StepperMotor:
@@ -13,14 +14,20 @@ class StepperMotor:
 
     def step(self):
         """Make a single step"""
-        print("step")
-        if self.stepping:
-            threading.Timer(1/self.step_frequency, self.step).start()
+        self.step_counter += 1
+        while self.stepping:
+            # GPIO HIGH
+            # wait period/2
+            # GPIO LOW
+            # wait period/2
+            time.sleep(1/self.step_frequency)
+            print("step")
+            pass
 
     def start_step(self):
         """Start stepping"""
         self.stepping = True
-        self.step()
+        threading.Thread(target=self.step).start()
 
     def stop_step(self):
         """Stop stepping"""
@@ -28,9 +35,10 @@ class StepperMotor:
 
     def reverse(self):
         """Reverse movement direction"""
-        pass
+        self.reversed = not self.reversed
 
     def calibrate(self):
         """Calibrate motor to zero position.
         The motor is moved all the way to one side until the microswitch is hit."""
-        pass
+        self.step_counter = 0
+        self.reversed = False
