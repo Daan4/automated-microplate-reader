@@ -25,7 +25,7 @@ class Controller:
                 self.stop_loop_event.set()
                 break
             # Get the new pid controller output
-            output = self.pid(feedback=position)
+            output = -self.pid(feedback=position)
             # Use the controller output to control the stepper motor
             # todo convert output to stepper motor frequency setting???
             # Wait before taking next sample
