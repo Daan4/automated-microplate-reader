@@ -32,16 +32,16 @@ def initialise_io():
 
     # create x-axis controller
     caliper_x = Caliper()
-    steppermotor_x = StepperMotor(1, 1, 1, 1)
+    steppermotor_x = StepperMotor(17, 27, 22, 10)  # 10 Hz, gpio17 pulse, gpio27 direction, gpio22 interrupt
     controller_x = Controller(1, 1, 1, 1, steppermotor_x, caliper_x)
 
     # create y-axis controller
     caliper_y = Caliper()
-    steppermotor_y = StepperMotor(1, 1, 1, 1)
+    steppermotor_y = StepperMotor(2, 3, 4, 100)  # 100 Hz, gpio2 pulse, gpio3 direction, gpio4 interrupt
     controller_y = Controller(1, 1, 1, 1, steppermotor_y, caliper_y)
 
     # create z-axis steppermotor
-    steppermotor_z = StepperMotor(1, 1, 1, 1)
+    steppermotor_z = StepperMotor(0, 5, 6, 1)  # 1 Hz, gpio0 pulse, gpio5 direction, gpio6 interrupt
 
     # Calibrate steppermotors
     steppermotor_x.calibrate()
