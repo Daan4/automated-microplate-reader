@@ -32,9 +32,12 @@ class StepperMotor:
             time.sleep(1/(2*self.step_frequency))
             GPIO.output(self.pin_step, GPIO.LOW)
             time.sleep(1 / (2 * self.step_frequency))
-            self.step_counter += 1
+            if not self.reversed:
+                self.step_counter += 1
+            else:
+                self.step_counter -= 1
             current_step_counter += 1
-            if count is not None and current_step_counter == count:
+            if count is not None and current_step_counter == count or self.microswitch_hit_event.is_set():
                 self.stop_step()
 
     def start_step(self):
@@ -60,7 +63,6 @@ class StepperMotor:
         self.reversed = False
         self.start_step()
         if self.microswitch_hit_event.wait(self.calibration_timeout):
-            self.stop_step()
             self.step_counter = 0
             self.microswitch_hit_event.clear()
         else:
