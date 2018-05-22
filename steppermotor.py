@@ -16,6 +16,8 @@ class StepperMotor:
         self.microswitch_hit_event = threading.Event()
 
         # Setup GPIO
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
         GPIO.setup(self.pin_step, GPIO.OUT)
         GPIO.setup(self.pin_direction, GPIO.OUT)
         GPIO.setup(self.pin_calibration_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -68,6 +70,6 @@ class StepperMotor:
         else:
             raise TimeoutError('Timed out waiting for microswitch during calibration.')
 
-    def microswitch_callback(self):
+    def microswitch_callback(self, channel):
         """Interrupt callback. This function is called when the microswitch is pressed."""
         self.microswitch_hit_event.set()
