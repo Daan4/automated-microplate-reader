@@ -1,31 +1,20 @@
-from caliper import Caliper
-from controller import Controller
-from steppermotor import StepperMotor
-from camera import Camera
 import logging
 import threading
 import time
 import csv
 from tkinter import filedialog
-
-# Global references to the controllers and steppermotors for motion control
-controller_x = None
-controller_y = None
-steppermotor_z = None
-
-# Global reference to photo camera
-camera = None
-
-# Global reference to tkinter app frame
-app = None
-
-# Global reference to tkinter root frame
-tk_root = None
+from globals import initialise_io, controller_x, controller_y, steppermotor_z, camera
 
 # Set to stop process while it's running.
 stop_process_event = threading.Event()
 # Set to pause process while it's running after it finishes the current photo, clear to continue the process.
 pause_process_event = threading.Event()
+
+# Module level reference to tkinter app frame
+app = None
+
+# Module level reference to tkinter root frame
+tk_root = None
 
 
 def initialise_logging():
@@ -38,29 +27,17 @@ def initialise_logging():
     logger.addHandler(fh)
 
 
-def initialise_io():
-    global controller_x, controller_y, steppermotor_z, camera
-
-    # create x-axis controller object
-    caliper_x = Caliper(1, 1) # todo set gpio
-    steppermotor_x = StepperMotor(17, 27, 22, 10)  # 10 Hz, gpio17 pulse, gpio27 direction, gpio22 interrupt
-    controller_x = Controller(1, 1, 1, 1, steppermotor_x, caliper_x)
-
-    # create y-axis controller object
-    caliper_y = Caliper(1, 1) # todo set gpio
-    steppermotor_y = StepperMotor(2, 3, 4, 100)  # 100 Hz, gpio2 pulse, gpio3 direction, gpio4 interrupt
-    controller_y = Controller(1, 1, 1, 1, steppermotor_y, caliper_y)
-
-    # create z-axis steppermotor object
-    steppermotor_z = StepperMotor(0, 5, 6, 1)  # 1 Hz, gpio0 pulse, gpio5 direction, gpio6 interrupt
-
-    # create camera object
-    camera = Camera()
-
+def calibrate_all():
     # Calibrate steppermotors
+    steppermotor_x = controller_x.steppermotor
+    steppermotor_y = controller_y.steppermotor
+
     steppermotor_x.calibrate()
     steppermotor_y.calibrate()
     # Zero the calipers while the steppermotors are on their home position.
+    caliper_x = controller_x.caliper
+    caliper_y = controller_y.caliper
+
     steppermotor_x.stop_step_event.wait()
     caliper_x.zero()
     steppermotor_y.stop_step_event.wait()
@@ -131,5 +108,7 @@ def pause_process():
 
 if __name__ == '__main__':
     initialise_logging()
-    #initialise_io()
+    # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
+    initialise_io()
+    #calibrate_all()
     initialise_gui()
