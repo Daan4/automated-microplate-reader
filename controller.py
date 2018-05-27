@@ -35,9 +35,6 @@ class Controller:
             output = -self.pid(feedback=position)
             # Use the controller output to control the stepper motor
             # todo convert output to stepper motor frequency setting???
-            # Wait before taking next sample
-            # todo subtract this function's running time if a more accurate sleep time is needed
-            time.sleep(1/self.sample_frequency)
 
     def start(self, setpoint):
         """Start the control loop."""
