@@ -22,6 +22,7 @@ HIGH = 10
 LOW = 11
 PUD_DOWN = 0
 RISING = 1
+FALLING = 2
 
 
 def setup(d, *args, **kwargs):
@@ -39,5 +40,10 @@ def output(c, v):
 def cleanup(*args):
     pass
 
+
 def add_event_detect(*args, **kwargs):
+    pass
+
+
+def remove_event_detect(channel):
     pass
