@@ -2,7 +2,7 @@ import threading
 import time
 import RPi.GPIO as GPIO
 
-
+# todo check pull up/down , debounce and timeout settings
 class StepperMotor:
     def __init__(self, pin_step, pin_direction, pin_calibration_microswitch, step_frequency, microswitch_bouncetime=300, calibration_timeout=10):
         self.reversed = False  # If true then direction is reversed ie digital output HIGH
@@ -50,6 +50,7 @@ class StepperMotor:
     def stop_step(self):
         """Stop stepping"""
         self.stop_step_event.set()
+        self.microswitch_hit_event.clear()
 
     def reverse(self):
         """Reverse movement direction"""
