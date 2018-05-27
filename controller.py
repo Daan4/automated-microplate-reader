@@ -1,6 +1,6 @@
 from pid_controller.pid import PID
 import threading
-import time
+import queue
 
 
 class Controller:
@@ -19,7 +19,7 @@ class Controller:
             # Wait for the next sensor reading
             try:
                 position = self.caliper.get_reading()
-            except TimeoutError:
+            except queue.Empty:
                 # Timed out waiting for sensor reading
                 # Check if the process was while waiting for sensor reading
                 if self.stop_loop_event.is_set():
