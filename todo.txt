@@ -1,0 +1,10 @@
+als 2e microswitch op frame -> verwerk in steppermotor.py als eindschakelaar met interrupt net als calibratie switch
+
+test caliper data uitlezen mbv scope, dan uitzoeken hoe 24-bit waarde omrekenen naar mm
+
+test steppermotor.py met echte stappermotor/switches
+
+hoe gaan we controller output omrekenen naar stappermotor instelling? Bepalen wat in te stellen en dan gewoon pid output begrenzen?
+
+check of alle threads juist worden gestopt, maak overzicht met alle threads en start/stop condities?
+mogelijke problemen kunnen ontstaan doordat caliper.py asynchroon schuifmaten uitleest?
