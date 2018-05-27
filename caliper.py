@@ -39,8 +39,9 @@ class Caliper:
     def stop_listening(self):
         # Disable clock interrupt
         GPIO.remove_event_detect(self.pin_clock)
-        # Clear queue
-        self.reading_queue = Queue(1)
+        # Clear queue (otherwise on the next process start it might start with an old reading in the queue?)
+        with self.reading_queue.mutex:
+            self.reading_queue.queue.clear()
 
     def get_reading(self, timeout=1):
         """
