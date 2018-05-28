@@ -3,7 +3,7 @@ import threading
 import time
 import csv
 from tkinter import filedialog
-from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y
+from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera
 
 # Set to stop process while it's running.
 stop_process_event = threading.Event()
