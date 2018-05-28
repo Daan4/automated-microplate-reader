@@ -39,13 +39,13 @@ class StepperMotor:
             else:
                 self.step_counter -= 1
             current_step_counter += 1
-            if count is not None and current_step_counter == count or self.microswitch_hit_event.is_set():
+            if (count is not None and current_step_counter == count) or self.microswitch_hit_event.is_set():
                 self.stop_step()
 
-    def start_step(self):
+    def start_step(self, count=None):
         """Start stepping"""
         self.stop_step_event.clear()
-        threading.Thread(target=self._step).start()
+        threading.Thread(target=self._step, args=[count]).start()
 
     def stop_step(self):
         """Stop stepping"""
