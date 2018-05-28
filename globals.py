@@ -16,6 +16,9 @@ steppermotor_z = None
 # Global reference to photo camera
 camera = None
 
+# Global reference to tkinter app frame
+app = None
+
 
 def initialise_io():
     global controller_x, controller_y, steppermotor_z, camera
@@ -34,3 +37,16 @@ def initialise_io():
 
     # create camera object
     camera = Camera()
+
+
+def initialise_gui():
+    import gui  # Avoiding circular imports
+    global app
+    tk_root = gui.tk.Tk()
+    # tk_root.iconbitmap(filepath) # optional add icon
+    tk_root.title('Automated Microplate Reader')
+    # Set up (almost) fullscreen windowed
+    #w, h = tk_root.winfo_screenwidth(), tk_root.winfo_screenheight()
+    #tk_root.geometry('%dx%d+0+0' % (w, h))
+
+    app = gui.AutomatedMicroplateReaderApplication(tk_root)
