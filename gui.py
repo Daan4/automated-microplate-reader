@@ -1,6 +1,7 @@
 import tkinter as tk
 from main import start_process, stop_process, pause_process, z_move_camera
 from PIL import ImageTk, Image
+import os
 
 
 class AutomatedMicroplateReaderApplication(tk.Frame):
@@ -15,7 +16,7 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
 
         # Set startup values
         # todo use some logo / text ?
-        self.update_image('C:\\Users\Daan\Documents\pycharmprojects\\automated-microplate-reader\\testimage.jpg')
+        self.update_image(os.path.join(os.path.dirname(__file__), 'testimage.jpg'))
         self.update_status('STANDBY')
 
     def create_widgets(self):
@@ -58,6 +59,7 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
         self.button_z_up.grid(row=5, column=0)
         self.button_z_down = tk.Button(self, text='Omlaag', command=lambda: z_move_camera(-int(self.stringvar_num_zsteps.get())))
         self.button_z_down.grid(row=5, column=1)
+        # todo add input for camera sleep time?
 
     def update_image(self, image_path):
         """
