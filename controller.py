@@ -34,6 +34,10 @@ class Controller:
             # Get the new pid controller output
             output = -self.pid(feedback=position)
             # Use the controller output to control the stepper motor
+            if self.steppermotor.stop_step_event.is_set():
+                # The steppermotor stopped unexpectedly -> Limit switch was hit
+                self.stop_loop_event.set()
+                raise LimitSwitchHitException
             # todo convert output to stepper motor frequency setting???
 
     def start(self, setpoint):
@@ -51,3 +55,7 @@ class Controller:
 
     def wait_until_finished(self):
         self.stop_loop_event.wait()
+
+
+class LimitSwitchHitException(Exception):
+    pass
