@@ -1,6 +1,8 @@
 from pid_controller.pid import PID
+from main import stop_process
 import threading
 import queue
+from tkinter import messagebox
 
 
 class Controller:
@@ -36,8 +38,11 @@ class Controller:
             # Use the controller output to control the stepper motor
             if self.steppermotor.stop_step_event.is_set():
                 # The steppermotor stopped unexpectedly -> Limit switch was hit
-                self.stop_loop_event.set()
-                raise LimitSwitchHitException
+                # Stop the entire process
+                stop_process()
+                messagebox.showerror('Foutmelding', 'Een eindschakelaar is geraakt tijdens het proces.')
+                break
+                # todo display error message?
             # todo convert output to stepper motor frequency setting???
 
     def start(self, setpoint):
