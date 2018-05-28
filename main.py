@@ -58,7 +58,19 @@ def initialise_gui():
     app.mainloop()
 
 
-def start_process():
+def z_move_camera(num_steps):
+    """
+    Move the camera on the z-axis by a given number of steps in either direction.
+
+    Args:
+        num_steps: The number of steps to move, a negative number will move the motor in reverse direction
+
+
+    """
+    steppermotor_z.start_step(num_steps)
+
+
+def start_process(setpoints=None):
     """
     Reads setpoints from a csv file with 2 columns (x setpoint, y setpoint per well).
     Then the camera is positioned above each well by using the two controllers.
@@ -66,11 +78,14 @@ def start_process():
     Args:
         setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
     """
-    # Ask for setpoints file path
-    setpoints_filepath = filedialog.askopenfilename(filetypes=[('Setpoints csv', '*.csv')])
-    with open(setpoints_filepath) as f:
-        reader = csv.reader(f)
-        setpoints = [row for row in reader]
+    # todo disable z axis controls during process
+
+    # Open setpoints from csv file if none are given
+    if setpoints is None:
+        setpoints_filepath = filedialog.askopenfilename(filetypes=[('Setpoints csv', '*.csv')])
+        with open(setpoints_filepath) as f:
+            reader = csv.reader(f)
+            setpoints = [row for row in reader]
 
     for well in setpoints:
         setpoint_x, setpoint_y = well
@@ -111,4 +126,5 @@ if __name__ == '__main__':
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
     initialise_io()
     #calibrate_all()
+    # todo initial height setting / z calibration on startup
     initialise_gui()
