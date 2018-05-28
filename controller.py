@@ -1,5 +1,4 @@
 from pid_controller.pid import PID
-from main import stop_process
 import threading
 import queue
 from tkinter import messagebox
@@ -39,6 +38,8 @@ class Controller:
             if self.steppermotor.stop_step_event.is_set():
                 # The steppermotor stopped unexpectedly -> Limit switch was hit
                 # Stop the entire process
+                # Importing stop_process here to prevent circular import
+                from main import stop_process
                 stop_process()
                 messagebox.showerror('Foutmelding', 'Een eindschakelaar is geraakt tijdens het proces.')
                 break
