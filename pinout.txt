@@ -1,0 +1,19 @@
+stp x
+17 27 22 + 13 (eindschAAK
+
+stp y
+2 3 4 + 19 eindsch
+
+stp z
+0 5 6 + 26 eindsch
+
+caliper x
+14 15 18
+
+GND tussen 18 en 23
+
+caliper y
+
+23 24 25
+
+8 noodstopswitch
