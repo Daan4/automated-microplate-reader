@@ -8,3 +8,10 @@ hoe gaan we controller output omrekenen naar stappermotor instelling? Bepalen wa
 
 check of alle threads juist worden gestopt, maak overzicht met alle threads en start/stop condities?
 mogelijke problemen kunnen ontstaan doordat caliper.py asynchroon schuifmaten uitleest?
+
+
+status updates en informatie
+
+noodstop knop
+
+save/load
