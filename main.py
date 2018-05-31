@@ -4,6 +4,8 @@ import time
 import csv
 from tkinter import filedialog
 from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera
+from caliper import Caliper
+from steppermotor import StepperMotor
 
 # Set to stop process while it's running.
 stop_process_event = threading.Event()
@@ -111,16 +113,42 @@ def pause_process():
         pause_process_event.set()
     else:
         pause_process_event.clear()
+        
+
+def test_caliper():
+    pin_data = None
+    pin_clock = None
+    pin_zero = None
+    caliper = Caliper(pin_data, pin_clock, pin_zero, delay=150*10**-6)
+    caliper.zero()
+    caliper.start_listening()
+    while True:
+        print(caliper.get_reading())
+
+
+def test_steppermotor():
+    pin_step = None
+    pin_direction = None
+    pin_microswitch = None
+    frequency = 10
+    steppermotor = StepperMotor(pin_step, pin_direction, pin_microswitch, frequency)
+    steppermotor.start_step(10)
+    time.sleep(2)
+    steppermotor.reverse()
+    steppermotor.start_step(10)
+    time.sleep(2)
 
 
 if __name__ == '__main__':
     initialise_logging()
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
-    initialise_io()
+    #initialise_io()
     #calibrate_all()
     # todo initial height setting on startup defined as steps from zero point
-    initialise_gui()
-    from globals import app
-    app.mainloop()
+    #initialise_gui()
+    test_caliper()
+    #test_steppermotor()
+    #from globals import app
+    #app.mainloop()
 
     # todo write functions to test steppermotor and caliper classes
