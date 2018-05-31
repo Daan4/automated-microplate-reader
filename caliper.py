@@ -5,7 +5,7 @@ from queue import Queue
 
 class Caliper:
     # todo check pull up  / down and debounce settings / queue size
-    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, delay=150):
+    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, delay=150, pin_debug=None):
         """Read a bit on the data pin every time a clock pulse is received.
         Return the 24-bit number that gets sent roughly every 100-150ms by the digital caliper.
 
@@ -16,6 +16,7 @@ class Caliper:
             clock_bouncetime: clock debounce time in ms
             pause_time: minimum time between packets in ms
             delay: the delay between clock falling edge and taking the data sample in seconds
+            pin_debug: gives a pulse on this pin when a data sample is taking. useful for debuggin with scope
         """
         self.pin_data = pin_data
         self.pin_clock = pin_clock
@@ -26,6 +27,7 @@ class Caliper:
         self.last_clock_time = 0
         self.reading_queue = Queue(1)  # Ideally the reading should always processed before the next one is ready.
         self.delay = delay
+        self.pin_debug = pin_debug
 
         # Setup gpio
         GPIO.setmode(GPIO.BCM)
@@ -33,6 +35,8 @@ class Caliper:
         GPIO.setup(self.pin_data, GPIO.IN)
         GPIO.setup(self.pin_clock, GPIO.IN)
         GPIO.setup(self.pin_zero, GPIO.OUT)
+        if self.pin_debug is not None:
+            GPIO.setup(self.pin_debug, GPIO.OUT)
 
     def start_listening(self):
         # Enable clock interrupt
@@ -72,6 +76,8 @@ class Caliper:
         If listening started mid-burst the data from that first burst will be discarded.
         """
         time.sleep(self.delay)
+        if self.pin_debug is not None:
+            GPIO.output(self.pin_debug, GPIO.HIGH)
         value = GPIO.input(self.pin_data)
         # If last clock was too long ago discard the current_burst_data buffer and assume a new data packet started.
         current_time = time.time()*1000.0
@@ -85,3 +91,6 @@ class Caliper:
         if len(self.current_burst_data) == 24:
             # todo convert list of bits to distance in mm (w 2 decimals)
             self.reading_queue.put(self.current_burst_data)
+        if self.pin_debug is not None:
+            GPIO.output(self.pin_debug, GPIO.LOW)
+
