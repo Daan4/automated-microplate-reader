@@ -6,13 +6,26 @@ from tkinter import messagebox
 
 class Controller:
     """This class controls a single steppermotor-caliper feedback loop."""
-    def __init__(self, proportional_gain, integral_gain, differential_gain, stepper_motor, caliper, error_margin=0.01):
+    def __init__(self, proportional_gain, integral_gain, differential_gain, stepper_motor, caliper, error_margin=0.01,
+                 steppermotor_frequency_limits=(5, 1000)):
+        """
+
+        Args:
+            proportional_gain: P gain of controller
+            integral_gain: I gain of controller
+            differential_gain: D gain of controller
+            stepper_motor: StepperMotor object
+            caliper: Caliper object
+            error_margin: The maximum error in absolute terms (so error_margin=10 -> +-10)
+            steppermotor_frequency_limits: the minimum and maximum steppermotor frequencies
+        """
         self.pid = PID(p=proportional_gain, i=integral_gain, d=differential_gain)  # P I D controller
         self.steppermotor = stepper_motor  # The stepper motor moving the load
         self.caliper = caliper  # The caliper providing position feedback.
         self.stop_loop_event = threading.Event()
         self.setpoint = None
         self.error_margin = error_margin  # Allowed margin of error between setpoint and measured position.
+        self.step_frequency_min, self.step_frequency_max = steppermotor_frequency_limits
 
     def _control_loop(self):
         """The control loop, self.start and self.stop start and stop this control loop in it's own thread."""
@@ -44,7 +57,15 @@ class Controller:
                 messagebox.showerror('Foutmelding', 'Een eindschakelaar is geraakt tijdens het proces.')
                 break
                 # todo display error message?
-            # todo convert output to stepper motor frequency setting???
+            # Set correct motor direction
+            if output < 0 and not self.steppermotor.reversed or output >= 0 and self.steppermotor.reversed:
+                self.steppermotor.reverse()
+            # Set motor step frequency, adhering to the upper and lower limit
+            if abs(output) > self.step_frequency_max:
+                output = self.step_frequency_max
+            elif abs(output) < self.step_frequency_min:
+                output = self.step_frequency_min
+            self.steppermotor.step_frequency = abs(output)
 
     def start(self, setpoint):
         """Start the control loop."""
