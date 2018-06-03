@@ -60,7 +60,14 @@ class Caliper:
         Returns:
             latest reading that was added to self.reading_queue by clock_callback
         """
-        return self.reading_queue.get(True, timeout)
+        bit_list = self.reading_queue.get(True, timeout).reverse()
+        # bits 0-2 are always 0, bit 3 is the sign where 1 = negative and 0 = positive
+        # bit 4-23 needs to be converted to decimal and divided by 100 to get the position in mm.
+        value = bit_list_to_decimal(bit_list[4:])
+        # use correct sign
+        if bit_list[3] == 1:
+            value = -value
+        return value / 100
 
     def zero(self):
         """Set the current caliper position to be the zero position."""
@@ -94,3 +101,9 @@ class Caliper:
         if self.pin_debug is not None:
             GPIO.output(self.pin_debug, GPIO.LOW)
 
+
+def bit_list_to_decimal(bit_list):
+    out = 0
+    for bit in bit_list:
+        out = (out << 1) | bit
+    return out
