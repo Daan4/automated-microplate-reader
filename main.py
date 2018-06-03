@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 import csv
+import RPi.GPIO as GPIO
 from tkinter import filedialog
 from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera
 from caliper import Caliper
@@ -41,6 +42,14 @@ def calibrate_all():
     steppermotor_y.stop_step_event.wait()
     caliper_y.zero()
     steppermotor_z.stop_step_event.wait()
+
+def test():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    GPIO.setup(3, GPIO.IN)
+    while True:
+        print(GPIO.input(3))
+        time.sleep(1/10000)
 
 
 def z_move_camera(num_steps):
@@ -113,17 +122,18 @@ def pause_process():
         pause_process_event.set()
     else:
         pause_process_event.clear()
-        
+
 
 def test_caliper():
-    pin_data = None
-    pin_clock = None
-    pin_zero = None
-    caliper = Caliper(pin_data, pin_clock, pin_zero, delay=150*10**-6)
+    pin_data = 3
+    pin_clock = 2
+    pin_zero = 4
+    pin_debug = 17
+    caliper = Caliper(pin_data, pin_clock, pin_zero, 0, 50, 150, pin_debug)
     caliper.zero()
     caliper.start_listening()
     while True:
-        print(caliper.get_reading())
+        print(caliper.get_reading(10))
 
 
 def test_steppermotor():
@@ -147,6 +157,7 @@ if __name__ == '__main__':
     # todo initial height setting on startup defined as steps from zero point
     #initialise_gui()
     test_caliper()
+    #test()
     #test_steppermotor()
     #from globals import app
     #app.mainloop()
