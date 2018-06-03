@@ -2,6 +2,8 @@ from caliper import Caliper
 from controller import Controller
 from steppermotor import StepperMotor
 from camera import Camera
+import RPi.GPIO as GPIO
+import threading
 
 """
 This module holds global references to some useful objects.
@@ -18,6 +20,11 @@ camera = None
 
 # Global reference to tkinter app frame
 app = None
+
+# Set to stop process while it's running.
+stop_process_event = threading.Event()
+# Set to pause process while it's running after it finishes the current photo, clear to continue the process.
+pause_process_event = threading.Event()
 
 
 def initialise_io():
@@ -37,6 +44,14 @@ def initialise_io():
 
     # create camera object
     camera = Camera()
+
+    # setup emergency stop button interrupt
+    from main import stop_process
+    GPIO.setmode(GPIO.BCM)
+    emergency_stop_pin = 1 # todo set gpio
+    GPIO.setwarnings(False)
+    GPIO.setup(emergency_stop_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.add_event_detect(emergency_stop_pin, GPIO.FALLING, callback=stop_process())
 
 
 def initialise_gui():
