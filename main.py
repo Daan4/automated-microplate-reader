@@ -2,16 +2,10 @@ import logging
 import threading
 import time
 import csv
-import RPi.GPIO as GPIO
 from tkinter import filedialog
-from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera
+from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event
 from caliper import Caliper
 from steppermotor import StepperMotor
-
-# Set to stop process while it's running.
-stop_process_event = threading.Event()
-# Set to pause process while it's running after it finishes the current photo, clear to continue the process.
-pause_process_event = threading.Event()
 
 
 def initialise_logging():
@@ -42,14 +36,6 @@ def calibrate_all():
     steppermotor_y.stop_step_event.wait()
     caliper_y.zero()
     steppermotor_z.stop_step_event.wait()
-
-def test():
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
-    GPIO.setup(3, GPIO.IN)
-    while True:
-        print(GPIO.input(3))
-        time.sleep(1/10000)
 
 
 def z_move_camera(num_steps):
@@ -112,12 +98,14 @@ def start_process(setpoints=None):
 
 
 def stop_process():
+    """Stop the process."""
     stop_process_event.set()
     controller_x.stop()
     controller_y.stop()
 
 
 def pause_process():
+    """Pause the process after it finished the current well."""
     if not pause_process_event.is_set():
         pause_process_event.set()
     else:
@@ -152,14 +140,14 @@ def test_steppermotor():
 if __name__ == '__main__':
     initialise_logging()
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
-    #initialise_io()
+    initialise_io()
     #calibrate_all()
     # todo initial height setting on startup defined as steps from zero point
-    #initialise_gui()
-    test_caliper()
+    initialise_gui()
+    #test_caliper()
     #test()
     #test_steppermotor()
-    #from globals import app
-    #app.mainloop()
+    from globals import app
+    app.mainloop()
 
     # todo write functions to test steppermotor and caliper classes
