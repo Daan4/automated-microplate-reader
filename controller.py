@@ -16,8 +16,8 @@ class Controller:
             differential_gain: D gain of controller
             stepper_motor: StepperMotor object
             caliper: Caliper object
-            error_margin: The maximum error in absolute terms (so error_margin=10 -> +-10)
-            steppermotor_frequency_limits: the minimum and maximum steppermotor frequencies
+            error_margin: The maximum error in absolute terms in mm (so error_margin=10 -> +-10)
+            steppermotor_frequency_limits: tuple with the minimum and maximum steppermotor frequencies
         """
         self.pid = PID(p=proportional_gain, i=integral_gain, d=differential_gain)  # P I D controller
         self.steppermotor = stepper_motor  # The stepper motor moving the load
@@ -40,13 +40,16 @@ class Controller:
                     break
                 else:
                     raise TimeoutError("Controller timed out waiting for sensor reading")
+
             if self.setpoint - position < self.error_margin:
                 # If we reached the goal position -> stop the control loop
                 self.setpoint = None
                 self.stop_loop_event.set()
                 break
+
             # Get the new pid controller output
             output = -self.pid(feedback=position)
+
             # Use the controller output to control the stepper motor
             if self.steppermotor.stop_step_event.is_set():
                 # The steppermotor stopped unexpectedly -> Limit switch was hit
@@ -57,6 +60,7 @@ class Controller:
                 messagebox.showerror('Foutmelding', 'Een eindschakelaar is geraakt tijdens het proces.')
                 break
                 # todo display error message?
+
             # Set correct motor direction
             if output < 0 and not self.steppermotor.reversed or output >= 0 and self.steppermotor.reversed:
                 self.steppermotor.reverse()
@@ -81,8 +85,5 @@ class Controller:
         self.caliper.stop_listening()
 
     def wait_until_finished(self):
+        """Blocks until the control loop stops."""
         self.stop_loop_event.wait()
-
-
-class LimitSwitchHitException(Exception):
-    pass
