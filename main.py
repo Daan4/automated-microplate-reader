@@ -1,5 +1,4 @@
 import logging
-import threading
 import time
 import csv
 from tkinter import filedialog
@@ -9,6 +8,7 @@ from steppermotor import StepperMotor
 
 
 def initialise_logging():
+    """Initialise debug logging to file"""
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler('debug.log')
@@ -19,6 +19,8 @@ def initialise_logging():
 
 
 def calibrate_all():
+    """Calibrate all three steppermotors to their zero position.
+    Both calipers are also zeroed when the steppermotors reach this position."""
     from globals import controller_x, controller_y, steppermotor_z
     # Calibrate steppermotors
     steppermotor_x = controller_x.steppermotor
@@ -44,7 +46,6 @@ def z_move_camera(num_steps):
 
     Args:
         num_steps: The number of steps to move, a negative number will move the motor in reverse direction
-
 
     """
     if num_steps >= 0:
@@ -149,5 +150,3 @@ if __name__ == '__main__':
     #test_steppermotor()
     from globals import app
     app.mainloop()
-
-    # todo write functions to test steppermotor and caliper classes
