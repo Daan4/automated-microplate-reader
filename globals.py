@@ -51,7 +51,7 @@ def initialise_io():
     emergency_stop_pin = 1 # todo set gpio
     GPIO.setwarnings(False)
     GPIO.setup(emergency_stop_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(emergency_stop_pin, GPIO.FALLING, callback=stop_process())
+    GPIO.add_event_detect(emergency_stop_pin, GPIO.FALLING, callback=stop_process)
 
 
 def initialise_gui():
