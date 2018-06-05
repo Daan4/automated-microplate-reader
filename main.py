@@ -2,9 +2,9 @@ import logging
 import time
 import csv
 from tkinter import filedialog, messagebox
-from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event
+from globals import initialise_io, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event
 from caliper import Caliper
-from steppermotor import StepperMotor
+from steppermotor import StepperMotor, CalibrationError
 
 
 def initialise_logging():
@@ -26,18 +26,21 @@ def calibrate_all():
     steppermotor_x = controller_x.steppermotor
     steppermotor_y = controller_y.steppermotor
 
-    steppermotor_x.calibrate()
-    steppermotor_y.calibrate()
-    # steppermotor_z.calibrate()
-    # Zero the calipers while the steppermotors are on their home position.
-    caliper_x = controller_x.caliper
-    caliper_y = controller_y.caliper
+    try:
+        steppermotor_x.calibrate()
+        steppermotor_y.calibrate()
+        # steppermotor_z.calibrate()
+        # Zero the calipers while the steppermotors are on their home position.
+        caliper_x = controller_x.caliper
+        caliper_y = controller_y.caliper
 
-    steppermotor_x.stop_step_event.wait()
-    caliper_x.zero()
-    steppermotor_y.stop_step_event.wait()
-    caliper_y.zero()
-    # steppermotor_z.stop_step_event.wait()
+        steppermotor_x.stop_step_event.wait()
+        caliper_x.zero()
+        steppermotor_y.stop_step_event.wait()
+        caliper_y.zero()
+        # steppermotor_z.stop_step_event.wait()
+    except CalibrationError as e:
+        messagebox.showerror('FOUT', 'Fout tijdens calibratie: {}'.format(e))
 
 
 def z_move_camera(num_steps):
@@ -136,7 +139,7 @@ def test_steppermotor():
     pin_microswitch2 = 27
     frequency = 25
     steppermotor = StepperMotor(pin_step, pin_direction, pin_microswitch, pin_microswitch2, frequency, 
-        calibration_timeout=1000)
+                                calibration_timeout=1000)
     input("ENTER start step 10")
     #steppermotor.start_step(100)
     #time.sleep(2)
@@ -156,6 +159,17 @@ def test_camera():
         camera.take_photo()
 
 
+def test_calipers():
+    from globals import controller_x, controller_y
+    caliper_x = controller_x.steppermotor.caliper
+    caliper_y = controller_y.steppermotor.caliper
+    caliper_x.start_listening()
+    caliper_y.start_listening()
+    while True:
+        print("x {}".format(caliper_x.get_reading()))
+        print("y {}".format(caliper_y.get_reading()))
+
+
 if __name__ == '__main__':
     initialise_logging()
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
@@ -164,6 +178,7 @@ if __name__ == '__main__':
     # todo initial height setting on startup defined as steps from zero point
     #initialise_gui()
     #test_caliper()
+    test_calipers()
     #from globals import camera
     #test_camera()
     #test_steppermotor()
