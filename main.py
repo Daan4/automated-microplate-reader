@@ -1,7 +1,7 @@
 import logging
 import time
 import csv
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event
 from caliper import Caliper
 from steppermotor import StepperMotor
@@ -73,9 +73,13 @@ def start_process(setpoints=None):
     # Open setpoints from csv file if none are given
     if setpoints is None:
         setpoints_filepath = filedialog.askopenfilename(filetypes=[('Setpoints csv', '*.csv')])
-        with open(setpoints_filepath) as f:
-            reader = csv.reader(f)
-            setpoints = [row for row in reader]
+        try:
+            with open(setpoints_filepath) as f:
+                reader = csv.reader(f)
+                setpoints = [row for row in reader]
+        except FileNotFoundError:
+            messagebox.showinfo("INFO", "Kies een bestand")
+            return
 
     for well in setpoints:
         setpoint_x, setpoint_y = well
@@ -126,27 +130,42 @@ def test_caliper():
 
 
 def test_steppermotor():
-    pin_step = None
-    pin_direction = None
-    pin_microswitch = None
-    frequency = 10
-    steppermotor = StepperMotor(pin_step, pin_direction, pin_microswitch, frequency)
-    steppermotor.start_step(10)
-    time.sleep(2)
-    steppermotor.reverse()
-    steppermotor.start_step(10)
-    time.sleep(2)
+    pin_step = 2
+    pin_direction = 4
+    pin_microswitch = 17
+    pin_microswitch2 = 27
+    frequency = 25
+    steppermotor = StepperMotor(pin_step, pin_direction, pin_microswitch, pin_microswitch2, frequency, 
+        calibration_timeout=1000)
+    input("ENTER start step 10")
+    #steppermotor.start_step(100)
+    #time.sleep(2)
+    #input("enter start step 10 reverse")
+    #steppermotor.reverse()
+    #steppermotor.start_step(100)
+    #time.sleep(2)
+    ##steppermotor.calibrate()
+    # Test stopping when hitting microswitch
+    # steppermotor.start_step()
+    # steppermotor.stop_step_event.wait(0)
+
+
+def test_camera():
+    while True:
+        input('enter voor foto')
+        camera.take_photo()
 
 
 if __name__ == '__main__':
     initialise_logging()
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
     initialise_io()
-    #calibrate_all()
+    calibrate_all()
     # todo initial height setting on startup defined as steps from zero point
-    initialise_gui()
+    #initialise_gui()
     #test_caliper()
-    #test()
+    #from globals import camera
+    #test_camera()
     #test_steppermotor()
-    from globals import app
-    app.mainloop()
+    # from globals import app
+    # app.mainloop()
