@@ -14,11 +14,11 @@ class Camera:
             # todo get camera settings from jeroen
             self.camera = PiCamera()
             time.sleep(2)
-            self.camera.shutter_speed = self.camera.exposure_speed
-            self.camera.exposure_mode = "off"
-            g = self.camera.awb_gains
-            self.camera.awb_mode = "off"
-            self.camera.awb_gains = g
+            # self.camera.shutter_speed = self.camera.exposure_speed
+            # self.camera.exposure_mode = "off"
+            # g = self.camera.awb_gains
+            # self.camera.awb_mode = "off"
+            # self.camera.awb_gains = g
         except PiCameraError as e:
             # Camera not connected
             self.camera = None
