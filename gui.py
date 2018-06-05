@@ -2,6 +2,7 @@ import tkinter as tk
 from main import start_process, stop_process, pause_process, z_move_camera
 from PIL import ImageTk, Image
 import os
+from globals import DROPDOWN_OPTIONS_DICT
 
 
 class AutomatedMicroplateReaderApplication(tk.Frame):
@@ -21,13 +22,13 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
 
     def create_widgets(self):
         # Well plate choice drop down
-        self.label_well_plate = tk.Label(self, text="Kies een well plate")
+        self.label_well_plate = tk.Label(self, text='Kies well plate')
         self.label_well_plate.grid(row=1, column=0)
-        self.stringvar_well_plate = tk.StringVar(value="48")
-        self.dd_well_plate = tk.OptionMenu(self, self.stringvar_well_plate, "inlezen uit csv", "12", "36", "48", "96")
+        self.stringvar_well_plate = tk.StringVar(value="Kies .csv bestand")
+        self.dd_well_plate = tk.OptionMenu(self, self.stringvar_well_plate, *DROPDOWN_OPTIONS_DICT.keys())
         self.dd_well_plate.grid(row=1, column=1)
         # Start button
-        self.button_start = tk.Button(self, text='Start', command=start_process)
+        self.button_start = tk.Button(self, text='Start', command=lambda: start_process(DROPDOWN_OPTIONS_DICT[self.stringvar_well_plate.get()]))
         self.button_start.grid(row=2, column=0)
         # Pause button
         self.button_pause = tk.Button(self, text='Pauze', command=pause_process)
