@@ -23,7 +23,7 @@ LOW = 11
 PUD_DOWN = 0
 RISING = 1
 FALLING = 2
-
+PUD_UP=1
 
 def setup(d, *args, **kwargs):
     pass
