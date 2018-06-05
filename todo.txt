@@ -1,17 +1,12 @@
-als 2e microswitch op frame -> verwerk in steppermotor.py als eindschakelaar met interrupt net als calibratie switch
-(optionele pin ingeven?)
 
-test noodstop interrupt, stop en pauze
 
 test steppermotor.py met echte stappermotor/switches
 
 test regelaar
 
-interface/gemak:
-onthoud instellingen, ook voor z-axis afstelling
-
 test camera quality
 
-save/load
+get camera settings jeroen veen
+digitaal filter om glitches (flipped bits) in schuifmaaat te filteren?
 
-maten inlezen uit tekening?
+todo status text aanpassen
