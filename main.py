@@ -28,7 +28,7 @@ def calibrate_all():
 
     steppermotor_x.calibrate()
     steppermotor_y.calibrate()
-    steppermotor_z.calibrate()
+    # steppermotor_z.calibrate()
     # Zero the calipers while the steppermotors are on their home position.
     caliper_x = controller_x.caliper
     caliper_y = controller_y.caliper
@@ -37,7 +37,7 @@ def calibrate_all():
     caliper_x.zero()
     steppermotor_y.stop_step_event.wait()
     caliper_y.zero()
-    steppermotor_z.stop_step_event.wait()
+    # steppermotor_z.stop_step_event.wait()
 
 
 def z_move_camera(num_steps):
