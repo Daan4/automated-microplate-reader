@@ -67,7 +67,7 @@ class Caliper:
         # use correct sign
         if bit_list[3] == 1:
             value = -value
-        return value / 100
+        return self.filter(value / 100)
 
     def zero(self):
         """Set the current caliper position to be the zero position."""
@@ -100,6 +100,10 @@ class Caliper:
             self.reading_queue.put(self.current_burst_data)
         if self.pin_debug is not None:
             GPIO.output(self.pin_debug, GPIO.LOW)
+
+    def filter(self, new_sample):
+        # todo implement filter
+        return new_sample
 
 
 def bit_list_to_decimal(bit_list):
