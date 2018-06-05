@@ -23,6 +23,7 @@ class StepperMotor:
         self.pin_calibration_microswitch = pin_calibration_microswitch  # GPIO pin for microswitch input
         self.pin_safety_microswitch = pin_safety_microswitch
         self.step_frequency = step_frequency
+        self.default_step_frequency = step_frequency
         self.calibration_timeout = calibration_timeout
 
         self.reversed = False  # If true then direction is reversed ie digital output HIGH
@@ -33,8 +34,8 @@ class StepperMotor:
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
-        GPIO.setup(self.pin_step, GPIO.OUT)
-        GPIO.setup(self.pin_direction, GPIO.OUT)
+        GPIO.setup(self.pin_step, GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup(self.pin_direction, GPIO.OUT, initial=GPIO.LOW)
         GPIO.setup(self.pin_calibration_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         GPIO.setup(self.pin_safety_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -71,6 +72,8 @@ class StepperMotor:
     def start_step(self, count=None):
         """Start stepping"""
         self.stop_step_event.clear()
+        self.microswitch_hit_event.clear()
+        self.step_frequency = self.default_step_frequency
         threading.Thread(target=self._step, args=[count]).start()
 
     def stop_step(self):
@@ -88,11 +91,11 @@ class StepperMotor:
 
         """
         if setting is not None:
-            self.reversed = setting
             if self.reversed:
                 GPIO.output(self.pin_direction, GPIO.HIGH)
             else:
                 GPIO.output(self.pin_direction, GPIO.LOW)
+            self.reversed = setting
         else:
             if not self.reversed:
                 GPIO.output(self.pin_direction, GPIO.HIGH)
@@ -107,8 +110,9 @@ class StepperMotor:
         self.start_step()
         if self.microswitch_hit_event.wait(self.calibration_timeout):
             self.step_counter = 0
-            self.microswitch_hit_event.clear()
+            #self.microswitch_hit_event.clear()
         else:
+            self.stop_step()
             raise TimeoutError('Timed out waiting for microswitch during calibration.')
 
     def microswitch_callback(self, channel):
