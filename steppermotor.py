@@ -2,6 +2,7 @@ import threading
 import time
 import RPi.GPIO as GPIO
 
+
 # todo check pull up/down , debounce and timeout settings
 class StepperMotor:
     def __init__(self, pin_step, pin_direction, pin_calibration_microswitch, pin_safety_microswitch,
@@ -36,14 +37,17 @@ class StepperMotor:
         GPIO.setwarnings(False)
         GPIO.setup(self.pin_step, GPIO.OUT, initial=GPIO.LOW)
         GPIO.setup(self.pin_direction, GPIO.OUT, initial=GPIO.LOW)
-        GPIO.setup(self.pin_calibration_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.setup(self.pin_safety_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-        # Setup microswitch interrupt
-        GPIO.add_event_detect(self.pin_calibration_microswitch, GPIO.RISING, callback=self.microswitch_callback,
-                              bouncetime=microswitch_bouncetime)
-        GPIO.add_event_detect(self.pin_safety_microswitch, GPIO.RISING, callback=self.microswitch_callback,
-                              bouncetime=microswitch_bouncetime)
+        # Setup interrupts for limit switches if used
+        if self.pin_calibration_microswitch is not None and self.pin_safety_microswitch is not None:
+            GPIO.setup(self.pin_calibration_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            GPIO.setup(self.pin_safety_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+            # Setup microswitch interrupt
+            GPIO.add_event_detect(self.pin_calibration_microswitch, GPIO.RISING, callback=self.microswitch_callback,
+                                  bouncetime=microswitch_bouncetime)
+            GPIO.add_event_detect(self.pin_safety_microswitch, GPIO.RISING, callback=self.microswitch_callback,
+                                  bouncetime=microswitch_bouncetime)
 
     def _step(self, count=None):
         """Keep stepping until self.stop_step_event is set, or until count steps have been made if count is not None.
@@ -106,15 +110,22 @@ class StepperMotor:
     def calibrate(self):
         """Calibrate motor to zero position.
         The motor is moved all the way to one side until the microswitch is hit."""
-        self.reverse(False)
-        self.start_step()
-        if self.microswitch_hit_event.wait(self.calibration_timeout):
-            self.step_counter = 0
-            #self.microswitch_hit_event.clear()
+        if self.pin_calibration_microswitch is not None:
+            self.reverse(False)
+            self.start_step()
+            if self.microswitch_hit_event.wait(self.calibration_timeout):
+                self.step_counter = 0
+                #self.microswitch_hit_event.clear()
+            else:
+                self.stop_step()
+                raise CalibrationError('Timed out waiting for microswitch during calibration.')
         else:
-            self.stop_step()
-            raise TimeoutError('Timed out waiting for microswitch during calibration.')
+            raise CalibrationError('No microswitch setup for this steppermotor')
 
     def microswitch_callback(self, channel):
         """Interrupt callback. This function is called when the microswitch is pressed."""
         self.microswitch_hit_event.set()
+
+
+class CalibrationError(BaseException):
+    pass
