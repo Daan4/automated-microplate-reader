@@ -2,7 +2,7 @@ import logging
 import time
 import csv
 from tkinter import filedialog, messagebox
-from globals import initialise_io, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event
+from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event, DROPDOWN_OPTIONS_DICT
 from caliper import Caliper
 from steppermotor import StepperMotor, CalibrationError
 
@@ -71,7 +71,6 @@ def start_process(setpoints=None):
         setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
     """
     from globals import app
-    # todo disable z axis controls during process
 
     # Open setpoints from csv file if none are given
     if setpoints is None:
@@ -83,8 +82,9 @@ def start_process(setpoints=None):
         except FileNotFoundError:
             messagebox.showinfo("INFO", "Kies een bestand")
             return
-
+    counter = 1
     for well in setpoints:
+        app.update_status("WELL {}/{}".format(counter, len(setpoints)))
         setpoint_x, setpoint_y = well
         # Start control loops with given setpoints
         controller_x.start(setpoint_x)
@@ -103,6 +103,7 @@ def start_process(setpoints=None):
             # Stop the loop. The controllers and steppermotors are stopped by stop_process
             stop_process_event.clear()
             break
+        counter += 1
 
 
 def stop_process():
@@ -110,11 +111,15 @@ def stop_process():
     stop_process_event.set()
     controller_x.stop()
     controller_y.stop()
+    from globals import app
+    app.update_status("STANDBY")
 
 
 def pause_process():
     """Pause the process after it finished the current well."""
+    from globals import app
     if not pause_process_event.is_set():
+        app.update_status("GEPAUZEERD")
         pause_process_event.set()
     else:
         pause_process_event.clear()
