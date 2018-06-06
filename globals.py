@@ -41,6 +41,7 @@ CONTROLLER_X_I_GAIN = 0
 CONTROLLER_X_D_GAIN = 0
 CONTROLLER_X_FREQ_LIMITS = [25, 300]
 CONTROLLER_X_ERROR_MARGIN = 0.1
+CONTROLLER_X_SETTLING_TIME = 0.5
 
 CALIPER_Y_PIN_DATA = 20
 CALIPER_Y_PIN_CLOCK = 21
@@ -55,6 +56,7 @@ CONTROLLER_Y_I_GAIN = 0
 CONTROLLER_Y_D_GAIN = 0
 CONTROLLER_Y_FREQ_LIMITS = [25, 300]
 CONTROLLER_Y_ERROR_MARGIN = 0.1
+CONTROLLER_Y_SETTLING_TIME = 0.5
 
 STEPPERMOTOR_Z_PIN_STEP = 22
 STEPPERMOTOR_Z_PIN_DIRECTION = 27
@@ -92,6 +94,7 @@ def initialise_io():
                               caliper_x,
                               CONTROLLER_X_ERROR_MARGIN,
                               CONTROLLER_X_FREQ_LIMITS,
+                              CONTROLLER_X_SETTLING_TIME,
                               "x")
 
     # create y-axis controller object
@@ -113,6 +116,7 @@ def initialise_io():
                               caliper_y,
                               CONTROLLER_Y_ERROR_MARGIN,
                               CONTROLLER_Y_FREQ_LIMITS,
+                              CONTROLLER_Y_SETTLING_TIME,
                               "y")
 
     # create z-axis steppermotor object # todo set gpio

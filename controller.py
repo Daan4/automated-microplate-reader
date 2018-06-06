@@ -1,13 +1,14 @@
 from pid_controller.pid import PID
 import threading
 import queue
+import time
 from tkinter import messagebox
 
 
 class Controller:
     """This class controls a single steppermotor-caliper feedback loop."""
-    def __init__(self, proportional_gain, integral_gain, differential_gain, stepper_motor, caliper, error_margin=0.01,
-                 steppermotor_frequency_limits=(5, 1000), name=""):
+    def __init__(self, proportional_gain, integral_gain, differential_gain, stepper_motor, caliper, error_margin,
+                 steppermotor_frequency_limits, settling_time, name):
         """
 
         Args:
@@ -18,6 +19,7 @@ class Controller:
             caliper: Caliper object
             error_margin: The maximum error in absolute terms in mm (so error_margin=10 -> +-10)
             steppermotor_frequency_limits: tuple with the minimum and maximum steppermotor frequencies
+            settling_time: the time in seconds that the position reading should stay within the setpoint + error_margin range to stop
         """
         self.pid = PID(p=proportional_gain, i=integral_gain, d=differential_gain)  # P I D controller
         self.steppermotor = stepper_motor  # The stepper motor moving the load
@@ -27,6 +29,10 @@ class Controller:
         self.error_margin = error_margin  # Allowed margin of error between setpoint and measured position.
         self.step_frequency_min, self.step_frequency_max = steppermotor_frequency_limits
         self.name = name
+        self.settling_time = settling_time
+
+        self.start_settling_time = None  # timestamp when settling started
+        self.settling = False
 
     def _control_loop(self):
         """The control loop, self.start and self.stop start and stop this control loop in it's own thread."""
@@ -43,15 +49,20 @@ class Controller:
                     raise TimeoutError("Controller {} timed out waiting for sensor reading".format(self.name))
 
             error = self.setpoint - position
-            print("loop")
-            print(position)
-            print(error)
+            print("loop {} pos {}".format(self.name, position))
             
             if abs(error) < self.error_margin:
-                # If we reached the goal position -> stop the control loop
-                print("stop {}".format(self.name))
-                self.stop()
-                break
+                if self.settling and time.time() - self.start_settling_time > self.settling_time:
+                    # If we reached the goal position for a given settling time -> stop the control loop
+                    print("stop {}".format(self.name))
+                    self.stop()
+                    break
+                else:
+                    self.settling = True
+                    self.start_settling_time = time.time()
+            else:
+                self.settling = False
+                self.start_settling_time = None
             
             # Get the new pid controller output
             output = self.pid(feedback=error)
@@ -65,14 +76,13 @@ class Controller:
                 stop_process()
                 messagebox.showerror('Foutmelding', 'Een eindschakelaar is geraakt tijdens het proces.')
                 break
-                # todo display error message?
 
             # Set correct motor direction
             if output > 0 and not self.steppermotor.reversed or output <= 0 and self.steppermotor.reversed:
                 self.steppermotor.reverse()
             print(self.steppermotor.reversed)
 
-            # Set motor step frequency, adhering to the upper and lower limit
+            # Set motor step frequency, clipping to the upper and lower limit
             if abs(output) > self.step_frequency_max:
                 output = self.step_frequency_max
             elif abs(output) < self.step_frequency_min:
