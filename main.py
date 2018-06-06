@@ -96,11 +96,12 @@ def start_process(setpoints=None):
         #app.update_status("WELL {}/{}".format(counter, len(setpoints)))
         setpoint_x, setpoint_y = well
         # Start control loops with given setpoints
-        controller_x.start(setpoint_x)
-        #controller_y.start(setpoint_y)
-        # Wait for control loops to finish
-        controller_x.wait_until_finished()
-        #controller_y.wait_until_finished()
+        t1 = threading.Thread(target=async_start_controller_and_wait, args=[controller_x, setpoint_x])
+        t1.start()
+        t2 = threading.Thread(target=async_start_controller_and_wait, args=[controller_y, setpoint_y])
+        t2.start()
+        t1.join()
+        t2.join()
         # Take a picture and wait a bit before moving on to the next well
         #photo_path = camera.take_photo()
         # Show the image on screen
@@ -115,13 +116,18 @@ def start_process(setpoints=None):
         counter += 1
 
 
+def async_start_controller_and_wait(controller, setpoint):
+    controller.start(setpoint)
+    controller.wait_until_finished()
+
+
 def stop_process():
     """Stop the process."""
     stop_process_event.set()
     controller_x.stop()
     controller_y.stop()
     from globals import app
-    app.update_status("STANDBY")
+    #app.update_status("STANDBY")
 
 
 def pause_process():
@@ -180,7 +186,7 @@ if __name__ == '__main__':
     print("calib")
     calibrate_all()
     print("start")
-    start_process([(2, 2)])
+    start_process([(12, 12)])
     #initialise_gui()
 
     # app.mainloop()
