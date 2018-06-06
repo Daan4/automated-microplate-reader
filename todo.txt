@@ -7,6 +7,8 @@ test regelaar
 test camera quality
 
 get camera settings jeroen veen
-digitaal filter om glitches (flipped bits) in schuifmaaat te filteren?
+belangrijk digitaal filter om glitches (flipped bits) in schuifmaaat te filteren?
 
-todo status text aanpassen
+interrupts negeren bij wegrijden na CaLIBRERN?
+
+todo status text aanpasse
