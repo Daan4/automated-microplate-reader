@@ -79,6 +79,8 @@ def start_process(setpoints=None):
     Args:
         setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
     """
+    calibrate_all()
+
     from globals import app, controller_x, controller_y, camera
 
     # Open setpoints from csv file if none are given
@@ -173,9 +175,12 @@ def test_calipers():
     caliper_y = controller_y.caliper
     #caliper_x.start_listening()
     caliper_y.start_listening()
-    while True:
-        #print("x {}".format(caliper_x.get_reading(10)))
-        print("y {}".format(caliper_y.get_reading()))
+    with open("caliper_data.txt", "w") as f:
+        while True:
+            #print("x {}".format(caliper_x.get_reading(10)))
+            sample = caliper_y.get_reading()
+            print("y {}".format(sample))
+            f.write("{} \n".format(sample))
 
 
 if __name__ == '__main__':
