@@ -43,8 +43,11 @@ class Controller:
                     raise TimeoutError("Controller {} timed out waiting for sensor reading".format(self.name))
 
             error = self.setpoint - position
+            print("loop")
+            print(position)
+            print(error)
             
-            if error < self.error_margin:
+            if abs(error) < self.error_margin:
                 # If we reached the goal position -> stop the control loop
                 print("stop {}".format(self.name))
                 self.stop()
@@ -63,8 +66,6 @@ class Controller:
                 messagebox.showerror('Foutmelding', 'Een eindschakelaar is geraakt tijdens het proces.')
                 break
                 # todo display error message?
-            print(output)
-            print(self.steppermotor.reversed)
 
             # Set correct motor direction
             if output > 0 and not self.steppermotor.reversed or output <= 0 and self.steppermotor.reversed:
