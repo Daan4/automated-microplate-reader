@@ -5,7 +5,7 @@ from queue import Queue
 
 class Caliper:
     # todo check pull up  / down and debounce settings / queue size
-    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None):
+    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None, name=""):
         """Read a bit on the data pin every time a clock pulse is received.
         Return the 24-bit number that gets sent roughly every 100-150ms by the digital caliper.
 
