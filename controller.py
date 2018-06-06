@@ -33,9 +33,15 @@ class Controller:
 
         self.start_settling_time = None  # timestamp when settling started
         self.settling = False
+        self.captured_data = []  # Stores captured data for visualization and debugging purposes
 
-    def _control_loop(self):
-        """The control loop, self.start and self.stop start and stop this control loop in it's own thread."""
+    def _control_loop(self, capture_data, start_time):
+        """The control loop, self.start and self.stop start and stop this control loop in it's own thread.
+
+        Args:
+            capture_data: True to save timestamps and position samples to self.captured_data
+
+        """
         while not self.stop_loop_event.is_set():
             # Wait for the next sensor reading
             try:
@@ -47,7 +53,8 @@ class Controller:
                     break
                 else:
                     raise TimeoutError("Controller {} timed out waiting for sensor reading".format(self.name))
-
+            if capture_data:
+                self.captured_data.append((time.time() - start_time, position))
             error = self.setpoint - position
             print("loop {} pos {}".format(self.name, position))
             
@@ -89,13 +96,14 @@ class Controller:
                 output = self.step_frequency_min
             self.steppermotor.step_frequency = abs(output)
 
-    def start(self, setpoint):
+    def start(self, setpoint, capture=False):
         """Start the control loop."""
         self.stop_loop_event.clear()
         self.caliper.start_listening()
         self.steppermotor.start_step()
         self.setpoint = setpoint
-        threading.Thread(target=self._control_loop()).start()
+        self.captured_data = []
+        threading.Thread(target=self._control_loop, args=[capture, time.time()]).start()
 
     def stop(self):
         """Stop the control loop."""
