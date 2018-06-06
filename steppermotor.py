@@ -110,6 +110,10 @@ class StepperMotor:
     def calibrate(self):
         """Calibrate motor to zero position.
         The motor is moved all the way to one side until the microswitch is hit."""
+        # check if switch is already pressed, if so then don't move
+        if GPIO.input(self.pin_calibration_microswitch) == GPIO.HIGH or GPIO.input(self.pin_safety_microswitch) == GPIO.HIGH:
+            self.stop_step_event.set()
+            return
         if self.pin_calibration_microswitch is not None:
             self.reverse(False)
             self.start_step()
@@ -125,6 +129,7 @@ class StepperMotor:
     def microswitch_callback(self, channel):
         """Interrupt callback. This function is called when the microswitch is pressed."""
         self.microswitch_hit_event.set()
+        print("interrupt")
 
 
 class CalibrationError(BaseException):
