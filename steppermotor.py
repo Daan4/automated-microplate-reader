@@ -6,7 +6,7 @@ import RPi.GPIO as GPIO
 # todo check pull up/down , debounce and timeout settings
 class StepperMotor:
     def __init__(self, pin_step, pin_direction, pin_calibration_microswitch, pin_safety_microswitch,
-                 step_frequency, microswitch_bouncetime=300, calibration_timeout=10):
+                 step_frequency, microswitch_bouncetime=300, calibration_timeout=20):
         """
 
         Args:
@@ -96,15 +96,15 @@ class StepperMotor:
         """
         if setting is not None:
             if self.reversed:
-                GPIO.output(self.pin_direction, GPIO.HIGH)
-            else:
                 GPIO.output(self.pin_direction, GPIO.LOW)
+            else:
+                GPIO.output(self.pin_direction, GPIO.HIGH)
             self.reversed = setting
         else:
             if not self.reversed:
-                GPIO.output(self.pin_direction, GPIO.HIGH)
-            else:
                 GPIO.output(self.pin_direction, GPIO.LOW)
+            else:
+                GPIO.output(self.pin_direction, GPIO.HIGH)
             self.reversed = not self.reversed
 
     def calibrate(self):
