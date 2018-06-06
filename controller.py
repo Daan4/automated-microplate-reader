@@ -7,7 +7,7 @@ from tkinter import messagebox
 class Controller:
     """This class controls a single steppermotor-caliper feedback loop."""
     def __init__(self, proportional_gain, integral_gain, differential_gain, stepper_motor, caliper, error_margin=0.01,
-                 steppermotor_frequency_limits=(5, 1000)):
+                 steppermotor_frequency_limits=(5, 1000), name=""):
         """
 
         Args:
@@ -26,6 +26,7 @@ class Controller:
         self.setpoint = None
         self.error_margin = error_margin  # Allowed margin of error between setpoint and measured position.
         self.step_frequency_min, self.step_frequency_max = steppermotor_frequency_limits
+        self.name = name
 
     def _control_loop(self):
         """The control loop, self.start and self.stop start and stop this control loop in it's own thread."""
@@ -39,16 +40,18 @@ class Controller:
                 if self.stop_loop_event.is_set():
                     break
                 else:
-                    raise TimeoutError("Controller timed out waiting for sensor reading")
+                    raise TimeoutError("Controller {} timed out waiting for sensor reading".format(self.name))
 
-            if self.setpoint - position < self.error_margin:
+            error = self.setpoint - position
+            
+            if error < self.error_margin:
                 # If we reached the goal position -> stop the control loop
-                self.setpoint = None
-                self.stop_loop_event.set()
+                print("stop {}".format(self.name))
+                self.stop()
                 break
-
+            
             # Get the new pid controller output
-            output = -self.pid(feedback=position)
+            output = self.pid(feedback=error)
 
             # Use the controller output to control the stepper motor
             if self.steppermotor.stop_step_event.is_set():
@@ -60,10 +63,14 @@ class Controller:
                 messagebox.showerror('Foutmelding', 'Een eindschakelaar is geraakt tijdens het proces.')
                 break
                 # todo display error message?
+            print(output)
+            print(self.steppermotor.reversed)
 
             # Set correct motor direction
-            if output < 0 and not self.steppermotor.reversed or output >= 0 and self.steppermotor.reversed:
+            if output > 0 and not self.steppermotor.reversed or output <= 0 and self.steppermotor.reversed:
                 self.steppermotor.reverse()
+            print(self.steppermotor.reversed)
+
             # Set motor step frequency, adhering to the upper and lower limit
             if abs(output) > self.step_frequency_max:
                 output = self.step_frequency_max
@@ -75,6 +82,7 @@ class Controller:
         """Start the control loop."""
         self.stop_loop_event.clear()
         self.caliper.start_listening()
+        self.steppermotor.start_step()
         self.setpoint = setpoint
         threading.Thread(target=self._control_loop()).start()
 
