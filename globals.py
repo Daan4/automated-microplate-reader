@@ -35,10 +35,12 @@ STEPPERMOTOR_X_PIN_STEP = 3
 STEPPERMOTOR_X_PIN_DIRECTION = 2
 STEPPERMOTOR_X_PIN_CALIBRATION_SWITCH = 14
 STEPPERMOTOR_X_PIN_SAFETY_SWITCH = 25
-STEPPERMOTOR_X_FREQUENCY_DEFAULT = 25
-CONTROLLER_X_P_GAIN = 1
+STEPPERMOTOR_X_FREQUENCY_DEFAULT = 300
+CONTROLLER_X_P_GAIN = 150
 CONTROLLER_X_I_GAIN = 0
 CONTROLLER_X_D_GAIN = 0
+CONTROLLER_X_FREQ_LIMITS = [25, 300]
+CONTROLLER_X_ERROR_MARGIN = 0.1
 
 CALIPER_Y_PIN_DATA = 20
 CALIPER_Y_PIN_CLOCK = 21
@@ -47,10 +49,12 @@ STEPPERMOTOR_Y_PIN_STEP = 17
 STEPPERMOTOR_Y_PIN_DIRECTION = 4
 STEPPERMOTOR_Y_PIN_CALIBRATION_SWITCH = 15
 STEPPERMOTOR_Y_PIN_SAFETY_SWITCH = 8
-STEPPERMOTOR_Y_FREQUENCY_DEFAULT = 25
+STEPPERMOTOR_Y_FREQUENCY_DEFAULT = 300
 CONTROLLER_Y_P_GAIN = 1
 CONTROLLER_Y_I_GAIN = 0
 CONTROLLER_Y_D_GAIN = 0
+CONTROLLER_Y_FREQ_LIMITS = [100, 300]
+CONTROLLER_Y_ERROR_MARGIN = 0.5
 
 STEPPERMOTOR_Z_PIN_STEP = 22
 STEPPERMOTOR_Z_PIN_DIRECTION = 27
@@ -77,12 +81,16 @@ def initialise_io():
                                   STEPPERMOTOR_X_PIN_DIRECTION,
                                   STEPPERMOTOR_X_PIN_CALIBRATION_SWITCH,
                                   STEPPERMOTOR_X_PIN_SAFETY_SWITCH,
-                                  STEPPERMOTOR_X_FREQUENCY_DEFAULT)
+                                  STEPPERMOTOR_X_FREQUENCY_DEFAULT,
+                                  calibration_timeout=1000)
     controller_x = Controller(CONTROLLER_X_P_GAIN,
                               CONTROLLER_X_I_GAIN,
                               CONTROLLER_X_D_GAIN,
                               steppermotor_x,
-                              caliper_x)
+                              caliper_x,
+                              CONTROLLER_X_ERROR_MARGIN,
+                              CONTROLLER_X_FREQ_LIMITS,
+                              "x")
 
     # create y-axis controller object
     caliper_y = Caliper(CALIPER_Y_PIN_DATA,
@@ -92,11 +100,16 @@ def initialise_io():
                                   STEPPERMOTOR_Y_PIN_DIRECTION,
                                   STEPPERMOTOR_Y_PIN_CALIBRATION_SWITCH,
                                   STEPPERMOTOR_Y_PIN_SAFETY_SWITCH,
-                                  STEPPERMOTOR_Y_FREQUENCY_DEFAULT)
-    controller_y = Controller(CONTROLLER_X_P_GAIN,
-                              CONTROLLER_X_I_GAIN,
-                              CONTROLLER_X_D_GAIN,
-                              steppermotor_y, caliper_y)
+                                  STEPPERMOTOR_Y_FREQUENCY_DEFAULT,
+                                  calibration_timeout=1000)
+    controller_y = Controller(CONTROLLER_Y_P_GAIN,
+                              CONTROLLER_Y_I_GAIN,
+                              CONTROLLER_Y_D_GAIN,
+                              steppermotor_y,
+                              caliper_y,
+                              CONTROLLER_Y_ERROR_MARGIN,
+                              CONTROLLER_Y_FREQ_LIMITS,
+                              "y")
 
     # create z-axis steppermotor object # todo set gpio
     steppermotor_z = StepperMotor(STEPPERMOTOR_Z_PIN_STEP,
@@ -106,7 +119,7 @@ def initialise_io():
                                   STEPPERMOTOR_Z_FREQUENCY_DEFAULT)
 
     # create camera object
-    camera = Camera()
+    #camera = Camera()
 
     # setup emergency stop button interrupt
     from main import stop_process

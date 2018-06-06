@@ -1,6 +1,7 @@
 import logging
 import time
 import csv
+import threading
 from tkinter import filedialog, messagebox
 from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event, DROPDOWN_OPTIONS_DICT
 from caliper import Caliper
@@ -27,20 +28,28 @@ def calibrate_all():
     steppermotor_y = controller_y.steppermotor
 
     try:
-        steppermotor_x.calibrate()
-        steppermotor_y.calibrate()
+        threading.Thread(target=steppermotor_x.calibrate).start()
+        threading.Thread(target=steppermotor_y.calibrate).start()
+
         # steppermotor_z.calibrate()
         # Zero the calipers while the steppermotors are on their home position.
         caliper_x = controller_x.caliper
         caliper_y = controller_y.caliper
 
-        steppermotor_x.stop_step_event.wait()
-        caliper_x.zero()
-        steppermotor_y.stop_step_event.wait()
-        caliper_y.zero()
+        t1 = threading.Thread(target=async_wait_and_zero, args=[caliper_x, steppermotor_x])
+        t1.start()
+        t2 = threading.Thread(target=async_wait_and_zero, args=[caliper_y, steppermotor_y])
+        t2.start()
+        t1.join()
+        t2.join()
         # steppermotor_z.stop_step_event.wait()
     except CalibrationError as e:
         messagebox.showerror('FOUT', 'Fout tijdens calibratie: {}'.format(e))
+
+
+def async_wait_and_zero(caliper, steppermotor):
+    steppermotor.stop_step_event.wait()
+    caliper.zero()
 
 
 def z_move_camera(num_steps):
@@ -70,7 +79,7 @@ def start_process(setpoints=None):
     Args:
         setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
     """
-    from globals import app
+    from globals import app, controller_x, controller_y, camera
 
     # Open setpoints from csv file if none are given
     if setpoints is None:
@@ -84,18 +93,18 @@ def start_process(setpoints=None):
             return
     counter = 1
     for well in setpoints:
-        app.update_status("WELL {}/{}".format(counter, len(setpoints)))
+        #app.update_status("WELL {}/{}".format(counter, len(setpoints)))
         setpoint_x, setpoint_y = well
         # Start control loops with given setpoints
         controller_x.start(setpoint_x)
-        controller_y.start(setpoint_y)
+        #controller_y.start(setpoint_y)
         # Wait for control loops to finish
         controller_x.wait_until_finished()
-        controller_y.wait_until_finished()
+        #controller_y.wait_until_finished()
         # Take a picture and wait a bit before moving on to the next well
-        photo_path = camera.take_photo()
+        #photo_path = camera.take_photo()
         # Show the image on screen
-        app.update_image(photo_path)
+        #app.update_image(photo_path)
         while pause_process_event.is_set():
             # Wait for it to clear before continuing
             time.sleep(0.5)
@@ -123,18 +132,6 @@ def pause_process():
         pause_process_event.set()
     else:
         pause_process_event.clear()
-
-
-def test_caliper():
-    pin_data = 3
-    pin_clock = 2
-    pin_zero = 4
-    pin_debug = 17
-    caliper = Caliper(pin_data, pin_clock, pin_zero, 0, 50, 150, pin_debug)
-    caliper.zero()
-    caliper.start_listening()
-    while True:
-        print(caliper.get_reading(10))
 
 
 def test_steppermotor():
@@ -166,26 +163,24 @@ def test_camera():
 
 def test_calipers():
     from globals import controller_x, controller_y
-    caliper_x = controller_x.steppermotor.caliper
-    caliper_y = controller_y.steppermotor.caliper
-    caliper_x.start_listening()
+    #caliper_x = controller_x.caliper
+    caliper_y = controller_y.caliper
+    #caliper_x.start_listening()
     caliper_y.start_listening()
     while True:
-        print("x {}".format(caliper_x.get_reading()))
+        #print("x {}".format(caliper_x.get_reading(10)))
         print("y {}".format(caliper_y.get_reading()))
 
 
 if __name__ == '__main__':
     initialise_logging()
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
+    print("init")
     initialise_io()
+    print("calib")
     calibrate_all()
-    # todo initial height setting on startup defined as steps from zero point
+    print("start")
+    start_process([(2, 2)])
     #initialise_gui()
-    #test_caliper()
-    test_calipers()
-    #from globals import camera
-    #test_camera()
-    #test_steppermotor()
-    # from globals import app
+
     # app.mainloop()
