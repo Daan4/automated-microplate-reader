@@ -5,11 +5,6 @@ from camera import Camera
 import RPi.GPIO as GPIO
 import threading
 
-"""
-This module holds global references to some useful objects.
-"""
-
-
 # Global references to the controllers and steppermotors for motion control
 controller_x = None
 controller_y = None
@@ -27,21 +22,21 @@ stop_process_event = threading.Event()
 pause_process_event = threading.Event()
 
 # constant settings
-# TODO SET CORRECT VALUES
 CALIPER_X_PIN_DATA = 12
 CALIPER_X_PIN_CLOCK = 16
 CALIPER_X_PIN_ZERO = 19
+CALIPER_X_MAX_DELTA_BETWEEN_SAMPLES = 10  # in mm
 STEPPERMOTOR_X_PIN_STEP = 3
 STEPPERMOTOR_X_PIN_DIRECTION = 2
 STEPPERMOTOR_X_PIN_CALIBRATION_SWITCH = 14
 STEPPERMOTOR_X_PIN_SAFETY_SWITCH = 25
-STEPPERMOTOR_X_FREQUENCY_DEFAULT = 300
+STEPPERMOTOR_X_FREQUENCY_DEFAULT = 300  # Hz
 CONTROLLER_X_P_GAIN = 150
 CONTROLLER_X_I_GAIN = 0
 CONTROLLER_X_D_GAIN = 0
-CONTROLLER_X_FREQ_LIMITS = [25, 300]
-CONTROLLER_X_ERROR_MARGIN = 0.1
-CONTROLLER_X_SETTLING_TIME = 0.5
+CONTROLLER_X_FREQ_LIMITS = [25, 300]  # Hz
+CONTROLLER_X_ERROR_MARGIN = 0.1  # mm
+CONTROLLER_X_SETTLING_TIME = 0.5  # s
 
 CALIPER_Y_PIN_DATA = 20
 CALIPER_Y_PIN_CLOCK = 21
@@ -85,7 +80,7 @@ def initialise_io():
                                   STEPPERMOTOR_X_PIN_CALIBRATION_SWITCH,
                                   STEPPERMOTOR_X_PIN_SAFETY_SWITCH,
                                   STEPPERMOTOR_X_FREQUENCY_DEFAULT,
-                                  calibration_timeout=1000,
+                                  calibration_timeout=60,
                                   name="x")
     controller_x = Controller(CONTROLLER_X_P_GAIN,
                               CONTROLLER_X_I_GAIN,
@@ -107,7 +102,7 @@ def initialise_io():
                                   STEPPERMOTOR_Y_PIN_CALIBRATION_SWITCH,
                                   STEPPERMOTOR_Y_PIN_SAFETY_SWITCH,
                                   STEPPERMOTOR_Y_FREQUENCY_DEFAULT,
-                                  calibration_timeout=1000,
+                                  calibration_timeout=60,
                                   name="y")
     controller_y = Controller(CONTROLLER_Y_P_GAIN,
                               CONTROLLER_Y_I_GAIN,
@@ -119,12 +114,14 @@ def initialise_io():
                               CONTROLLER_Y_SETTLING_TIME,
                               "y")
 
-    # create z-axis steppermotor object # todo set gpio
+    # create z-axis steppermotor object
     steppermotor_z = StepperMotor(STEPPERMOTOR_Z_PIN_STEP,
                                   STEPPERMOTOR_Z_PIN_DIRECTION,
                                   STEPPERMOTOR_Z_PIN_CALIBRATION_SWITCH,
                                   STEPPERMOTOR_Z_PIN_SAFETY_SWITCH,
-                                  STEPPERMOTOR_Z_FREQUENCY_DEFAULT)
+                                  STEPPERMOTOR_Z_FREQUENCY_DEFAULT,
+                                  calibration_timeout=60,
+                                  name="z")
 
     # create camera object
     #camera = Camera()

@@ -5,7 +5,7 @@ from queue import Queue
 
 class Caliper:
     # todo check pull up  / down and debounce settings / queue size
-    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None, name=""):
+    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None, name="", max_delta_between_samples=10):
         """Read a bit on the data pin every time a clock pulse is received.
         Return the 24-bit number that gets sent roughly every 100-150ms by the digital caliper.
 
@@ -17,6 +17,7 @@ class Caliper:
             pause_time: minimum time between packets in ms
             delay: the delay between clock falling edge and taking the data sample in seconds
             pin_debug: gives a pulse on this pin when a data sample is taking. useful for debuggin with scope
+            max_delta_between_samples: if the distance between two consecutive readings is larger than this value the previous reading is repeated instead
         """
         self.pin_data = pin_data
         self.pin_clock = pin_clock
@@ -27,6 +28,10 @@ class Caliper:
         self.last_clock_time = 0
         self.reading_queue = Queue(1)  # Ideally the reading should always processed before the next one is ready.
         self.pin_debug = pin_debug
+        self.max_delta = max_delta_between_samples
+
+        self.name = name
+        self.previous_sample = None
 
         # Setup gpio
         GPIO.setmode(GPIO.BCM)
@@ -100,9 +105,27 @@ class Caliper:
         if self.pin_debug is not None:
             GPIO.output(self.pin_debug, GPIO.LOW)
 
-    def filter(self, new_sample):
-        # todo implement filter
-        return new_sample
+    def filter(self, sample):
+        """
+        Attempt to filter out random flipped bits in the data signal due to glitches.
+        If the new sample is too far away from the old sample it gets discarded and the old sample is repeated.
+
+        Args:
+            sample: the new data sample
+
+        Returns: filtered sample
+
+        """
+        if self.previous_sample is not None and abs(sample - self.previous_sample) > self.max_delta:
+            print("filtered {} {}".format(self.name, sample))
+            return self.previous_sample
+        else:
+            self.previous_sample = sample
+            return sample
+
+
+
+
 
 
 def bit_list_to_decimal(bit_list):
