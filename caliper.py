@@ -5,7 +5,7 @@ from queue import Queue
 
 class Caliper:
     # todo check pull up  / down and debounce settings / queue size
-    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, delay=150, pin_debug=None):
+    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None):
         """Read a bit on the data pin every time a clock pulse is received.
         Return the 24-bit number that gets sent roughly every 100-150ms by the digital caliper.
 
@@ -26,7 +26,6 @@ class Caliper:
         self.current_burst_data = list()
         self.last_clock_time = 0
         self.reading_queue = Queue(1)  # Ideally the reading should always processed before the next one is ready.
-        self.delay = delay
         self.pin_debug = pin_debug
 
         # Setup gpio
@@ -40,7 +39,7 @@ class Caliper:
 
     def start_listening(self):
         # Enable clock interrupt
-        GPIO.add_event_detect(self.pin_clock, GPIO.FALLING, callback=self.clock_callback)
+        GPIO.add_event_detect(self.pin_clock, GPIO.RISING, callback=self.clock_callback)
 
     def stop_listening(self):
         # Disable clock interrupt
@@ -60,7 +59,8 @@ class Caliper:
         Returns:
             latest reading that was added to self.reading_queue by clock_callback
         """
-        bit_list = self.reading_queue.get(True, timeout).reverse()
+        bit_list = self.reading_queue.get(True, timeout)
+        bit_list.reverse()
         # bits 0-2 are always 0, bit 3 is the sign where 1 = negative and 0 = positive
         # bit 4-23 needs to be converted to decimal and divided by 100 to get the position in mm.
         value = bit_list_to_decimal(bit_list[4:])
@@ -82,7 +82,6 @@ class Caliper:
         Data is sent in 24-bit bursts every ~100-150ms.
         If listening started mid-burst the data from that first burst will be discarded.
         """
-        time.sleep(self.delay)
         if self.pin_debug is not None:
             GPIO.output(self.pin_debug, GPIO.HIGH)
         value = GPIO.input(self.pin_data)
