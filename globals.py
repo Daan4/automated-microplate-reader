@@ -50,11 +50,11 @@ STEPPERMOTOR_Y_PIN_DIRECTION = 4
 STEPPERMOTOR_Y_PIN_CALIBRATION_SWITCH = 15
 STEPPERMOTOR_Y_PIN_SAFETY_SWITCH = 8
 STEPPERMOTOR_Y_FREQUENCY_DEFAULT = 300
-CONTROLLER_Y_P_GAIN = 1
+CONTROLLER_Y_P_GAIN = 150
 CONTROLLER_Y_I_GAIN = 0
 CONTROLLER_Y_D_GAIN = 0
-CONTROLLER_Y_FREQ_LIMITS = [100, 300]
-CONTROLLER_Y_ERROR_MARGIN = 0.5
+CONTROLLER_Y_FREQ_LIMITS = [25, 300]
+CONTROLLER_Y_ERROR_MARGIN = 0.1
 
 STEPPERMOTOR_Z_PIN_STEP = 22
 STEPPERMOTOR_Z_PIN_DIRECTION = 27
@@ -76,13 +76,15 @@ def initialise_io():
     # create x-axis controller object
     caliper_x = Caliper(CALIPER_X_PIN_DATA,
                         CALIPER_X_PIN_CLOCK,
-                        CALIPER_X_PIN_ZERO)
+                        CALIPER_X_PIN_ZERO,
+                        name="x")
     steppermotor_x = StepperMotor(STEPPERMOTOR_X_PIN_STEP,
                                   STEPPERMOTOR_X_PIN_DIRECTION,
                                   STEPPERMOTOR_X_PIN_CALIBRATION_SWITCH,
                                   STEPPERMOTOR_X_PIN_SAFETY_SWITCH,
                                   STEPPERMOTOR_X_FREQUENCY_DEFAULT,
-                                  calibration_timeout=1000)
+                                  calibration_timeout=1000,
+                                  name="x")
     controller_x = Controller(CONTROLLER_X_P_GAIN,
                               CONTROLLER_X_I_GAIN,
                               CONTROLLER_X_D_GAIN,
@@ -95,13 +97,15 @@ def initialise_io():
     # create y-axis controller object
     caliper_y = Caliper(CALIPER_Y_PIN_DATA,
                         CALIPER_Y_PIN_CLOCK,
-                        CALIPER_Y_PIN_ZERO)
+                        CALIPER_Y_PIN_ZERO,
+                        name="y")
     steppermotor_y = StepperMotor(STEPPERMOTOR_Y_PIN_STEP,
                                   STEPPERMOTOR_Y_PIN_DIRECTION,
                                   STEPPERMOTOR_Y_PIN_CALIBRATION_SWITCH,
                                   STEPPERMOTOR_Y_PIN_SAFETY_SWITCH,
                                   STEPPERMOTOR_Y_FREQUENCY_DEFAULT,
-                                  calibration_timeout=1000)
+                                  calibration_timeout=1000,
+                                  name="y")
     controller_y = Controller(CONTROLLER_Y_P_GAIN,
                               CONTROLLER_Y_I_GAIN,
                               CONTROLLER_Y_D_GAIN,
