@@ -6,7 +6,7 @@ import RPi.GPIO as GPIO
 # todo check pull up/down , debounce and timeout settings
 class StepperMotor:
     def __init__(self, pin_step, pin_direction, pin_calibration_microswitch, pin_safety_microswitch,
-                 step_frequency, microswitch_bouncetime=300, calibration_timeout=20):
+                 step_frequency, microswitch_bouncetime=300, calibration_timeout=20, name=""):
         """
 
         Args:
@@ -31,6 +31,8 @@ class StepperMotor:
         self.microswitch_hit_event = threading.Event()  # Set when the microswitch is hit, cleared when start stepping
         self.stop_step_event = threading.Event()  # Set it to stop stepping. Clear it when start stepping.
         self.step_counter = 0  # Number of steps away from zero position
+
+        self.name = name
 
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)
@@ -129,7 +131,7 @@ class StepperMotor:
     def microswitch_callback(self, channel):
         """Interrupt callback. This function is called when the microswitch is pressed."""
         self.microswitch_hit_event.set()
-        print("interrupt")
+        print("interrupt {}".format(self.name))
 
 
 class CalibrationError(BaseException):
