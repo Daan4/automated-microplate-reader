@@ -3,6 +3,7 @@ import threading
 import queue
 import time
 from tkinter import messagebox
+from globals import INTERRUPT_IGNORE_TIME
 
 
 class Controller:
@@ -51,7 +52,7 @@ class Controller:
                 position = self.caliper.get_reading()
             except queue.Empty:
                 # Timed out waiting for sensor reading
-                # Check if the process was while waiting for sensor reading
+                # Check if the process was stopped while waiting for sensor reading
                 if self.stop_loop_event.is_set():
                     break
                 else:
@@ -60,7 +61,6 @@ class Controller:
                 self.captured_data.append((time.time() - start_time, position))
             error = self.setpoint - position
             #print("loop {} pos {}".format(self.name, position))
-            
 
             if abs(error) < self.error_margin:
                 if self.settling and time.time() - self.start_settling_time > self.settling_time:
@@ -100,20 +100,21 @@ class Controller:
                 output = self.step_frequency_min
             self.steppermotor.step_frequency = abs(output)
 
-    def start(self, setpoint, capture=False):
+    def start(self, setpoint, capture=False, ignore_interrupts=False):
         """Start the control loop."""
         self.stop_loop_event.clear()
         self.caliper.start_listening()
         self.steppermotor.start_step()
         self.setpoint = setpoint + self.setpoint_offset
         self.captured_data = []
-        threading.Thread(target=self.temp_disable_interrupts).start()
+        if ignore_interrupts:
+            threading.Thread(target=self.temp_disable_interrupts).start()
         threading.Thread(target=self._control_loop, args=[capture, time.time()]).start()
         
     def temp_disable_interrupts(self):
         """ ignore interrupts when starting """
         self.steppermotor.disable_interrupts()
-        time.sleep(1.5)
+        time.sleep(INTERRUPT_IGNORE_TIME)
         self.steppermotor.enable_interrupts()
 
     def stop(self):

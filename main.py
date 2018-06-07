@@ -96,11 +96,18 @@ def start_process(setpoints=None, capture_data=False):
         except FileNotFoundError:
             messagebox.showinfo("INFO", "Kies een bestand")
             return
-        
+
+    # Calibrate the calipers
     calibrate_all()
+
     counter = 1
+
     old_setpoint_x = None
     old_setpoint_y = None
+
+    # On the first well ignore interrupts while moving away from the limit switches.
+    first_well = True
+
     for well in setpoints:
         app.update_status("WELL {}/{}".format(counter, len(setpoints)))
 
@@ -109,10 +116,10 @@ def start_process(setpoints=None, capture_data=False):
         # Start the controllers in their own thread, to wait for both of them to finish asynchronously.
         x_thread, y_thread = None, None
         if setpoint_x != old_setpoint_x:
-            x_thread = threading.Thread(target=async_start_controller_and_wait, args=[controller_x, setpoint_x, capture_data])
+            x_thread = threading.Thread(target=async_start_controller_and_wait, args=[controller_x, setpoint_x, capture_data, first_well])
             x_thread.start()
         if setpoint_y != old_setpoint_y:
-            y_thread = threading.Thread(target=async_start_controller_and_wait, args=[controller_y, setpoint_y, capture_data])
+            y_thread = threading.Thread(target=async_start_controller_and_wait, args=[controller_y, setpoint_y, capture_data, first_well])
             y_thread.start()
         try:
             x_thread.join()
@@ -142,10 +149,11 @@ def start_process(setpoints=None, capture_data=False):
         counter += 1
         old_setpoint_x = setpoint_x
         old_setpoint_y = setpoint_y
+        first_well = False
 
 
-def async_start_controller_and_wait(controller, setpoint, capture_data):
-    controller.start(setpoint, capture_data)
+def async_start_controller_and_wait(controller, setpoint, capture_data, ignore_interrupts):
+    controller.start(setpoint, capture_data, ignore_interrupts)
     controller.wait_until_finished()
 
 
