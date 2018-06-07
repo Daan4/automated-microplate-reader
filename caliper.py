@@ -4,7 +4,6 @@ from queue import Queue
 
 
 class Caliper:
-    # todo check pull up  / down and debounce settings / queue size
     def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None, name="", max_delta_between_samples=10):
         """Read a bit on the data pin every time a clock pulse is received.
         Return the 24-bit number that gets sent roughly every 100-150ms by the digital caliper.
@@ -24,13 +23,21 @@ class Caliper:
         self.pin_zero = pin_zero
         self.clock_bouncetime = clock_bouncetime
         self.pause_time = pause_time
-        self.current_burst_data = list()
-        self.last_clock_time = 0
-        self.reading_queue = Queue(1)  # Ideally the reading should always processed before the next one is ready.
         self.pin_debug = pin_debug
         self.max_delta = max_delta_between_samples
-
         self.name = name
+
+        # data buffer for current data packet
+        self.current_burst_data = list()
+
+        # keep track of clock signal interval
+        self.last_clock_time = 0
+
+        # Queue to pass reading to the controller thread
+        # Ideally the reading should always processed before the next one is ready.
+        self.reading_queue = Queue(1)
+
+        # keep track of previous reading
         self.previous_sample = 0
 
         # Setup gpio
@@ -122,10 +129,6 @@ class Caliper:
         else:
             self.previous_sample = sample
             return sample
-
-
-
-
 
 
 def bit_list_to_decimal(bit_list):
