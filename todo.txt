@@ -12,3 +12,6 @@ belangrijk digitaal filter om glitches (flipped bits) in schuifmaaat te filteren
 interrupts negeren bij wegrijden na CaLIBRERN?
 
 todo status text aanpasse
+
+interface niet blokkeren tijdens proces, gpio interrupt al ingesteld error???
+betere fotonamen
