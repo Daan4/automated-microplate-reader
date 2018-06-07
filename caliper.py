@@ -31,7 +31,7 @@ class Caliper:
         self.max_delta = max_delta_between_samples
 
         self.name = name
-        self.previous_sample = None
+        self.previous_sample = 0
 
         # Setup gpio
         GPIO.setmode(GPIO.BCM)
