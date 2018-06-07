@@ -8,7 +8,7 @@ from tkinter import messagebox
 class Controller:
     """This class controls a single steppermotor-caliper feedback loop."""
     def __init__(self, proportional_gain, integral_gain, differential_gain, stepper_motor, caliper, error_margin,
-                 steppermotor_frequency_limits, settling_time, name):
+                 steppermotor_frequency_limits, settling_time, name, setpoint_offset):
         """
 
         Args:
@@ -20,6 +20,8 @@ class Controller:
             error_margin: The maximum error in absolute terms in mm (so error_margin=10 -> +-10)
             steppermotor_frequency_limits: tuple with the minimum and maximum steppermotor frequencies
             settling_time: the time in seconds that the position reading should stay within the setpoint + error_margin range to stop
+            name: optional name
+            setpoints_offset: This offset move the camera to the corner of the well plate
         """
         self.pid = PID(p=proportional_gain, i=integral_gain, d=differential_gain)  # P I D controller
         self.steppermotor = stepper_motor  # The stepper motor moving the load
@@ -30,6 +32,7 @@ class Controller:
         self.step_frequency_min, self.step_frequency_max = steppermotor_frequency_limits
         self.name = name
         self.settling_time = settling_time
+        self.setpoint_offset = setpoint_offset
 
         self.start_settling_time = None  # timestamp when settling started
         self.settling = False
@@ -56,15 +59,16 @@ class Controller:
             if capture_data:
                 self.captured_data.append((time.time() - start_time, position))
             error = self.setpoint - position
-            print("loop {} pos {}".format(self.name, position))
+            #print("loop {} pos {}".format(self.name, position))
             
+
             if abs(error) < self.error_margin:
                 if self.settling and time.time() - self.start_settling_time > self.settling_time:
                     # If we reached the goal position for a given settling time -> stop the control loop
                     print("stop {}".format(self.name))
                     self.stop()
                     break
-                else:
+                elif not self.settling:
                     self.settling = True
                     self.start_settling_time = time.time()
             else:
@@ -87,7 +91,7 @@ class Controller:
             # Set correct motor direction
             if output > 0 and not self.steppermotor.reversed or output <= 0 and self.steppermotor.reversed:
                 self.steppermotor.reverse()
-            print(self.steppermotor.reversed)
+            #print(self.steppermotor.reversed)
 
             # Set motor step frequency, clipping to the upper and lower limit
             if abs(output) > self.step_frequency_max:
@@ -101,9 +105,16 @@ class Controller:
         self.stop_loop_event.clear()
         self.caliper.start_listening()
         self.steppermotor.start_step()
-        self.setpoint = setpoint
+        self.setpoint = setpoint + self.setpoint_offset
         self.captured_data = []
+        threading.Thread(target=self.temp_disable_interrupts).start()
         threading.Thread(target=self._control_loop, args=[capture, time.time()]).start()
+        
+    def temp_disable_interrupts(self):
+        """ ignore interrupts when starting """
+        self.steppermotor.disable_interrupts()
+        time.sleep(1.5)
+        self.steppermotor.enable_interrupts()
 
     def stop(self):
         """Stop the control loop."""
