@@ -72,44 +72,44 @@ def z_move_camera(num_steps):
     steppermotor_z.stop_step_event.wait()
 
 
-def start_process(setpoints=None, capture_data=False):
+def start_process(filepath=None, capture_data=False):
     """
     Reads setpoints from a csv file with 2 columns (x setpoint, y setpoint per well).
     Then the camera is positioned above each well by using the two controllers.
 
     Args:
-        setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
+        filepath: filepath to csv with x, y setpoints in mm in each row
     """
 
     # Import so the function works when called from main.py for testing
     from globals import app, controller_x, controller_y, camera
 
+    # Save start timestamp for photo file naming
     start_timestamp = datetime.now()
 
-    # Open setpoints from csv file if none are given
-    if setpoints is None:
-        setpoints_filepath = filedialog.askopenfilename(filetypes=[('Setpoints csv', '*.csv')])
-        try:
-            with open(setpoints_filepath) as f:
-                reader = csv.reader(f)
-                setpoints = [row for row in reader]
-        except FileNotFoundError:
-            messagebox.showinfo("INFO", "Kies een bestand")
-            return
+    # Read setpoints from csv file or ask for a file to open
+    if filepath is None:
+        filepath = filedialog.askopenfilename(filetypes=[('Setpoints csv', '*.csv')])
+    else:
+        filepath = filepath
+    try:
+        with open(filepath) as f:
+            reader = csv.reader(f)
+            filepath = [row for row in reader]
+    except FileNotFoundError:
+        messagebox.showinfo("INFO", "{} is geen geldig bestand".format(filepath))
+        return
 
     # Calibrate the calipers
     calibrate_all()
 
-    counter = 1
+    old_setpoint_x, old_setpoint_y = None, None
 
-    old_setpoint_x = None
-    old_setpoint_y = None
-
-    # On the first well ignore interrupts while moving away from the limit switches.
+    # On the first pair of setpoints ignore interrupts while moving away from the limit switches.
     first_well = True
 
-    for well in setpoints:
-        app.update_status("WELL {}/{}".format(counter, len(setpoints)))
+    for counter, well in enumerate(filepath):
+        app.update_status("WELL {}/{}".format(counter, len(filepath)))
 
         setpoint_x, setpoint_y = list(map(float, well))
 
@@ -129,9 +129,11 @@ def start_process(setpoints=None, capture_data=False):
             y_thread.join()
         except AttributeError:
             pass
+        old_setpoint_x = setpoint_x
+        old_setpoint_y = setpoint_y
             
         # Take a picture
-        filename = "{}_{}/{}".format(datetime.strftime(start_timestamp, "%Y%m%d%H%M%S"), counter, len(setpoints))
+        filename = "{}_{}/{}".format(datetime.strftime(start_timestamp, "%Y%m%d%H%M%S"), counter, len(filepath))
         photo_path = camera.take_photo(filename)
 
         # Show the image on screen
@@ -146,9 +148,6 @@ def start_process(setpoints=None, capture_data=False):
             stop_process_event.clear()
             break
 
-        counter += 1
-        old_setpoint_x = setpoint_x
-        old_setpoint_y = setpoint_y
         first_well = False
 
 
@@ -220,7 +219,7 @@ def test_calipers():
 if __name__ == '__main__':
     initialise_logging()
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
-    #initialise_io()
+    initialise_io()
     #calibrate_all()
     #start_process([(0, 0)], True)
     initialise_gui()
