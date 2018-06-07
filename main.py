@@ -1,10 +1,11 @@
 import logging
 import time
+from datetime import datetime
 import csv
 import threading
 from tkinter import filedialog, messagebox
-from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera, stop_process_event, pause_process_event, DROPDOWN_OPTIONS_DICT
-from caliper import Caliper
+from globals import initialise_io, initialise_gui, steppermotor_z, controller_x, controller_y, camera, \
+    stop_process_event, pause_process_event
 from steppermotor import StepperMotor, CalibrationError
 
 
@@ -79,8 +80,11 @@ def start_process(setpoints=None, capture_data=False):
     Args:
         setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
     """
-    # todo open preset files
+
+    # Import so the function works when called from main.py for testing
     from globals import app, controller_x, controller_y, camera
+
+    start_timestamp = datetime.now()
 
     # Open setpoints from csv file if none are given
     if setpoints is None:
@@ -95,26 +99,38 @@ def start_process(setpoints=None, capture_data=False):
         
     calibrate_all()
     counter = 1
+    old_setpoint_x = None
+    old_setpoint_y = None
     for well in setpoints:
-        #app.update_status("WELL {}/{}".format(counter, len(setpoints)))
-        setpoint_x, setpoint_y = well
-        setpoint_x = float(setpoint_x)
-        setpoint_y = float(setpoint_y)
-        # Start control loops with given setpoints
-        t1 = threading.Thread(target=async_start_controller_and_wait, args=[controller_x, setpoint_x, capture_data])
-        t1.start()
-        t2 = threading.Thread(target=async_start_controller_and_wait, args=[controller_y, setpoint_y, capture_data])
-        t2.start()
-        t1.join()
-        t2.join()
-        if capture_data:
-            print("x {}".format(controller_x.captured_data))
-            print("y {}".format(controller_y.captured_data))
+        app.update_status("WELL {}/{}".format(counter, len(setpoints)))
+
+        setpoint_x, setpoint_y = list(map(float, well))
+
+        # Start the controllers in their own thread, to wait for both of them to finish asynchronously.
+        x_thread, y_thread = None, None
+        if setpoint_x != old_setpoint_x:
+            x_thread = threading.Thread(target=async_start_controller_and_wait, args=[controller_x, setpoint_x, capture_data])
+            x_thread.start()
+        if setpoint_y != old_setpoint_y:
+            y_thread = threading.Thread(target=async_start_controller_and_wait, args=[controller_y, setpoint_y, capture_data])
+            y_thread.start()
+        try:
+            x_thread.join()
+        except AttributeError:
+            pass
+        try:
+            y_thread.join()
+        except AttributeError:
+            pass
             
-        # Take a picture and wait a bit before moving on to the next well
-        photo_path = camera.take_photo()
+        # Take a picture
+        filename = "{}_{}/{}".format(datetime.strftime(start_timestamp, "%Y%m%d%H%M%S"), counter, len(setpoints))
+        photo_path = camera.take_photo(filename)
+
         # Show the image on screen
-        #app.update_image(photo_path)
+        app.update_image(photo_path)
+
+        # Check for pause or stop
         while pause_process_event.is_set():
             # Wait for it to clear before continuing
             time.sleep(1.5)
@@ -122,7 +138,10 @@ def start_process(setpoints=None, capture_data=False):
             # Stop the loop. The controllers and steppermotors are stopped by stop_process
             stop_process_event.clear()
             break
+
         counter += 1
+        old_setpoint_x = setpoint_x
+        old_setpoint_y = setpoint_y
 
 
 def async_start_controller_and_wait(controller, setpoint, capture_data):
@@ -136,7 +155,7 @@ def stop_process():
     controller_x.stop()
     controller_y.stop()
     from globals import app
-    #app.update_status("STANDBY")
+    app.update_status("STANDBY")
 
 
 def pause_process():
@@ -193,25 +212,9 @@ def test_calipers():
 if __name__ == '__main__':
     initialise_logging()
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
-    print("init")
-    initialise_io()
+    #initialise_io()
     #calibrate_all()
-    print("start")
     #start_process([(0, 0)], True)
     initialise_gui()
     from globals import app
-    #sm = controller_x.steppermotor
-    #while True:
-    #    sm.start_step(1800)
-    #    sm.stop_step_event.wait()
-    #    print("a")
-    #    sm.reverse()
-    
-    #while True:
-    #    input()
-    #    controller_y.steppermotor.reverse()
-    #    print(controller_y.steppermotor.reversed)
-
-    #camera.camera.start_preview()
-    #while True:
-    #    time.sleep(1)
+    app.mainloop()
