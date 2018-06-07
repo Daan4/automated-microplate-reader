@@ -20,15 +20,16 @@ class Camera:
             self.camera = None
         self.exposure_time = exposure_time
 
-    def take_photo(self):
+    def take_photo(self, filename=None):
         """Take a photo and return the stored image path when ready"""
         # todo better image file names, maybe structured in folder per well plate and named per well
         if not os.path.exists('pics'):
             os.mkdir('pics')
-        image_path = os.path.join(os.path.dirname(__file__), 'pics/well_plate_{}.jpg'.format(time.time()))
+        if filename is None:
+            image_path = os.path.join(os.path.dirname(__file__), 'pics/well_plate_{}.jpg'.format(time.time()))
+        else:
+            image_path = os.path.join(os.path.dirname(__file__), 'pics/{}.jpg'.format(filename))
+
         if self.camera is not None:
-            # self.camera.start_preview()
-            # time.sleep(2)
-            # todo return default test image
             self.camera.capture(image_path)
         return image_path
