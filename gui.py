@@ -2,6 +2,7 @@ import tkinter as tk
 from main import start_process, stop_process, pause_process, z_move_camera
 from PIL import ImageTk, Image
 import os
+import threading
 from globals import DROPDOWN_OPTIONS_DICT
 
 
@@ -11,13 +12,13 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
         self.grid()
 
         # Register entry validation function to only allow int
-        self.check_num_zsteps = (self.register(validate_int), '%P')
+        self.check_num_zsteps = (self.register(self.validate_int), '%P')
 
         self.create_widgets()
 
         # Set startup values
         # todo use some logo / text ?
-        self.update_image(os.path.join(os.path.dirname(__file__), 'testimage.jpg'))
+        #self.update_image(os.path.join(os.path.dirname(__file__), 'testimage.jpg'))
         self.update_status('STANDBY')
 
     def create_widgets(self):
@@ -28,7 +29,7 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
         self.dd_well_plate = tk.OptionMenu(self, self.stringvar_well_plate, *DROPDOWN_OPTIONS_DICT.keys())
         self.dd_well_plate.grid(row=1, column=1)
         # Start button
-        self.button_start = tk.Button(self, text='Start', command=lambda: start_process(DROPDOWN_OPTIONS_DICT[self.stringvar_well_plate.get()]))
+        self.button_start = tk.Button(self, text='Start', command=self._start_pressed)
         self.button_start.grid(row=2, column=0)
         # Pause button
         self.button_pause = tk.Button(self, text='Pauze', command=pause_process)
@@ -60,7 +61,10 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
         self.button_z_up.grid(row=5, column=0)
         self.button_z_down = tk.Button(self, text='Omlaag', command=lambda: z_move_camera(-int(self.stringvar_num_zsteps.get())))
         self.button_z_down.grid(row=5, column=1)
-        # todo add input for camera sleep time?
+
+    def _start_pressed(self):
+        """Called when the start button is pressed."""
+        threading.Thread(target=start_process, args=[DROPDOWN_OPTIONS_DICT[self.stringvar_well_plate.get()]]).start()
 
     def update_image(self, image_path):
         """
@@ -91,13 +95,13 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
         """
         self.status_stringvar.set(status)
 
-
-def validate_int(new_value):
-    """tk.Entry validation that only allows positive integers"""
-    if new_value == '':
-        return True
-    try:
-        int(new_value)
-        return True
-    except ValueError:
-        return False
+    @staticmethod
+    def validate_int(new_value):
+        """tk.Entry validation that only allows positive integers"""
+        if new_value == '':
+            return True
+        try:
+            int(new_value)
+            return True
+        except ValueError:
+            return False
