@@ -5,23 +5,14 @@ from camera import Camera
 import RPi.GPIO as GPIO
 import threading
 
-# Global references to the controllers and steppermotors for motion control
-controller_x = None
-controller_y = None
-steppermotor_z = None
+DROPDOWN_OPTIONS_DICT = {'Kies .csv bestand': None,
+                         '12': '/setpoints/wellplate_12.csv',
+                         '36': '/setpoints/wellplate_36.csv',
+                         '48': '/setpoints/wellplate_48.csv',
+                         '96': '/setpoints/wellplate_96.csv'}
 
-# Global reference to photo camera
-camera = None
-
-# Global reference to tkinter app frame
-app = None
-
-# Set to stop process while it's running.
-stop_process_event = threading.Event()
-# Set to pause process while it's running after it finishes the current photo, clear to continue the process.
-pause_process_event = threading.Event()
-
-# constant settings
+# Constants/Settings
+# Pins are RPi 3B BCM GPIO pin numbers www.pinout.xyz
 CALIPER_X_PIN_DATA = 12
 CALIPER_X_PIN_CLOCK = 16
 CALIPER_X_PIN_ZERO = 19
@@ -64,11 +55,23 @@ STEPPERMOTOR_Z_FREQUENCY_DEFAULT = 25
 
 EMERGENCY_STOP_BUTTON_PIN = 23
 
-DROPDOWN_OPTIONS_DICT = {'Kies .csv bestand': None,
-                         '12': '/setpoints/wellplate_12.csv',
-                         '36': '/setpoints/wellplate_36.csv',
-                         '48': '/setpoints/wellplate_48.csv',
-                         '96': '/setpoints/wellplate_96.csv'}
+INTERRUPT_IGNORE_TIME = 1.5  # s
+
+# Global references to the controllers and steppermotors for motion control
+controller_x = None
+controller_y = None
+steppermotor_z = None
+
+# Global reference to photo camera
+camera = None
+
+# Global reference to tkinter app frame
+app = None
+
+# Set to stop process while it's running.
+stop_process_event = threading.Event()
+# Set to pause process while it's running after it finishes the current photo, clear to continue the process.
+pause_process_event = threading.Event()
 
 
 def initialise_io():
