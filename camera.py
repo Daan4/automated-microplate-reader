@@ -12,6 +12,9 @@ class Camera:
         """
         try:
             self.camera = PiCamera()
+            #self.camera.start_preview()
+            #while True:
+            #    time.sleep(1)
         except PiCameraError as e:
             # Camera not connected
             self.camera = None
