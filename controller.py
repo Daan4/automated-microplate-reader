@@ -3,13 +3,12 @@ import threading
 import queue
 import time
 from tkinter import messagebox
-from globals import INTERRUPT_IGNORE_TIME
 
 
 class Controller:
     """This class controls a single steppermotor-caliper feedback loop."""
     def __init__(self, proportional_gain, integral_gain, differential_gain, stepper_motor, caliper, error_margin,
-                 steppermotor_frequency_limits, settling_time, name, setpoint_offset):
+                 steppermotor_frequency_limits, settling_time, name, setpoint_offset, interrupt_ignore_time):
         """
 
         Args:
@@ -23,6 +22,7 @@ class Controller:
             settling_time: the time in seconds that the position reading should stay within the setpoint + error_margin range to stop
             name: optional name
             setpoints_offset: This offset move the camera to the corner of the well plate
+            interrupt_ignore_time: The time to ignore interrupts for in seconds when temp_disable_interrupts is called
         """
         self.pid = PID(p=proportional_gain, i=integral_gain, d=differential_gain)  # P I D controller
         self.steppermotor = stepper_motor  # The stepper motor moving the load
@@ -34,6 +34,7 @@ class Controller:
         self.name = name
         self.settling_time = settling_time
         self.setpoint_offset = setpoint_offset
+        self.interrupt_ignore_time = interrupt_ignore_time
 
         self.start_settling_time = None  # timestamp when settling started
         self.settling = False
@@ -114,7 +115,10 @@ class Controller:
     def temp_disable_interrupts(self):
         """ ignore interrupts when starting """
         self.steppermotor.disable_interrupts()
-        time.sleep(INTERRUPT_IGNORE_TIME)
+
+        # avoid circular import
+        time.sleep(self.interrupt_ignore_time)
+
         self.steppermotor.enable_interrupts()
 
     def stop(self):

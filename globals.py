@@ -9,7 +9,7 @@ DROPDOWN_OPTIONS_DICT = {'Kies .csv bestand': None,
                          '12': '/setpoints/wellplate_12.csv',
                          '36': '/setpoints/wellplate_36.csv',
                          '48': '/setpoints/wellplate_48.csv',
-                         '96': '/setpoints/wellplate_96.csv'}
+                         '96': 'D:\Libraries\Documents\pycharmprojects\\automated-microplate-reader\\testsetpoints.csv'}
 
 # Constants/Settings
 # Pins are RPi 3B BCM GPIO pin numbers www.pinout.xyz
@@ -98,7 +98,8 @@ def initialise_io():
                               CONTROLLER_X_FREQ_LIMITS,
                               CONTROLLER_X_SETTLING_TIME,
                               "x",
-                              CONTROLLER_X_SETPOINT_OFFSET)
+                              CONTROLLER_X_SETPOINT_OFFSET,
+                              INTERRUPT_IGNORE_TIME)
 
     # create y-axis controller object
     caliper_y = Caliper(CALIPER_Y_PIN_DATA,
@@ -122,7 +123,8 @@ def initialise_io():
                               CONTROLLER_Y_FREQ_LIMITS,
                               CONTROLLER_Y_SETTLING_TIME,
                               "y",
-                              CONTROLLER_Y_SETPOINT_OFFSET)
+                              CONTROLLER_Y_SETPOINT_OFFSET,
+                              INTERRUPT_IGNORE_TIME)
 
     # create z-axis steppermotor object
     steppermotor_z = StepperMotor(STEPPERMOTOR_Z_PIN_STEP,
