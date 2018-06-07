@@ -71,7 +71,7 @@ def z_move_camera(num_steps):
     steppermotor_z.stop_step_event.wait()
 
 
-def start_process(setpoints=None):
+def start_process(setpoints=None, capture_data=False):
     """
     Reads setpoints from a csv file with 2 columns (x setpoint, y setpoint per well).
     Then the camera is positioned above each well by using the two controllers.
@@ -79,8 +79,7 @@ def start_process(setpoints=None):
     Args:
         setpoints: x and y setpoints per well in the format: [(x_setpoint, y_setpoint), ...]
     """
-    calibrate_all()
-
+    # todo open preset files
     from globals import app, controller_x, controller_y, camera
 
     # Open setpoints from csv file if none are given
@@ -93,24 +92,32 @@ def start_process(setpoints=None):
         except FileNotFoundError:
             messagebox.showinfo("INFO", "Kies een bestand")
             return
+        
+    calibrate_all()
     counter = 1
     for well in setpoints:
         #app.update_status("WELL {}/{}".format(counter, len(setpoints)))
         setpoint_x, setpoint_y = well
+        setpoint_x = float(setpoint_x)
+        setpoint_y = float(setpoint_y)
         # Start control loops with given setpoints
-        t1 = threading.Thread(target=async_start_controller_and_wait, args=[controller_x, setpoint_x])
+        t1 = threading.Thread(target=async_start_controller_and_wait, args=[controller_x, setpoint_x, capture_data])
         t1.start()
-        t2 = threading.Thread(target=async_start_controller_and_wait, args=[controller_y, setpoint_y])
+        t2 = threading.Thread(target=async_start_controller_and_wait, args=[controller_y, setpoint_y, capture_data])
         t2.start()
         t1.join()
         t2.join()
+        if capture_data:
+            print("x {}".format(controller_x.captured_data))
+            print("y {}".format(controller_y.captured_data))
+            
         # Take a picture and wait a bit before moving on to the next well
-        #photo_path = camera.take_photo()
+        photo_path = camera.take_photo()
         # Show the image on screen
         #app.update_image(photo_path)
         while pause_process_event.is_set():
             # Wait for it to clear before continuing
-            time.sleep(0.5)
+            time.sleep(1.5)
         if stop_process_event.is_set():
             # Stop the loop. The controllers and steppermotors are stopped by stop_process
             stop_process_event.clear()
@@ -118,8 +125,8 @@ def start_process(setpoints=None):
         counter += 1
 
 
-def async_start_controller_and_wait(controller, setpoint):
-    controller.start(setpoint)
+def async_start_controller_and_wait(controller, setpoint, capture_data):
+    controller.start(setpoint, capture_data)
     controller.wait_until_finished()
 
 
@@ -188,10 +195,23 @@ if __name__ == '__main__':
     # I/O global references are defined in a seperate globals.py file, so that start_process, pause_process and stop_process can be called from other modules without issues.
     print("init")
     initialise_io()
-    print("calib")
-    calibrate_all()
+    #calibrate_all()
     print("start")
-    start_process([(12, 12)])
-    #initialise_gui()
+    #start_process([(0, 0)], True)
+    initialise_gui()
+    from globals import app
+    #sm = controller_x.steppermotor
+    #while True:
+    #    sm.start_step(1800)
+    #    sm.stop_step_event.wait()
+    #    print("a")
+    #    sm.reverse()
+    
+    #while True:
+    #    input()
+    #    controller_y.steppermotor.reverse()
+    #    print(controller_y.steppermotor.reversed)
 
-    # app.mainloop()
+    #camera.camera.start_preview()
+    #while True:
+    #    time.sleep(1)
