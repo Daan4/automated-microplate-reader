@@ -29,4 +29,4 @@ def generate_setpoints(initial_offset_y, initial_offset_x, offset_x, offset_y, r
 
 
 if __name__ == '__main__':
-    generate_setpoints(12.24, 18.38, 13, 13, 6, 8)
+    generate_setpoints(0, 0, 99/12, 99/12, 8, 12)
