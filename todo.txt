@@ -1,17 +1,9 @@
+interface niet blokkeren tijdens proces, ok
+gpio interrupt al ingesteld error??? -> sowieso alleen 1e keer na calibratie interrupts negeren ok
+regelaar alleen aanzetten als setpoint is veranderd tov vorige, ok
+betere fotonamen, ok
+read setpoints from filepath
 
+start -> check running threads
 
-test steppermotor.py met echte stappermotor/switches
-
-test regelaar
-
-test camera quality
-
-get camera settings jeroen veen
-belangrijk digitaal filter om glitches (flipped bits) in schuifmaaat te filteren?
-
-interrupts negeren bij wegrijden na CaLIBRERN?
-
-todo status text aanpasse
-
-interface niet blokkeren tijdens proces, gpio interrupt al ingesteld error???
-betere fotonamen
+stop -> check if all threads stop
