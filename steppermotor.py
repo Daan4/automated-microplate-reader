@@ -26,6 +26,7 @@ class StepperMotor:
         self.step_frequency = step_frequency
         self.default_step_frequency = step_frequency
         self.calibration_timeout = calibration_timeout
+        self.microswitch_bouncetime = microswitch_bouncetime
 
         self.reversed = False  # If true then direction is reversed ie digital output HIGH
         self.microswitch_hit_event = threading.Event()  # Set when the microswitch is hit, cleared when start stepping
@@ -47,9 +48,19 @@ class StepperMotor:
 
             # Setup microswitch interrupt
             GPIO.add_event_detect(self.pin_calibration_microswitch, GPIO.RISING, callback=self.microswitch_callback,
-                                  bouncetime=microswitch_bouncetime)
+                                  bouncetime=self.microswitch_bouncetime)
             GPIO.add_event_detect(self.pin_safety_microswitch, GPIO.RISING, callback=self.microswitch_callback,
-                                  bouncetime=microswitch_bouncetime)
+                                  bouncetime=self.microswitch_bouncetime)
+            
+    def enable_interrupts(self):
+        GPIO.add_event_detect(self.pin_calibration_microswitch, GPIO.RISING, callback=self.microswitch_callback,
+                                  bouncetime=self.microswitch_bouncetime)
+        GPIO.add_event_detect(self.pin_safety_microswitch, GPIO.RISING, callback=self.microswitch_callback,
+                                  bouncetime=self.microswitch_bouncetime)
+    
+    def disable_interrupts(self):
+        GPIO.remove_event_detect(self.pin_calibration_microswitch)
+        GPIO.remove_event_detect(self.pin_safety_microswitch)
 
     def _step(self, count=None):
         """Keep stepping until self.stop_step_event is set, or until count steps have been made if count is not None.
@@ -77,6 +88,7 @@ class StepperMotor:
 
     def start_step(self, count=None):
         """Start stepping"""
+        self.reverse(False)
         self.stop_step_event.clear()
         self.microswitch_hit_event.clear()
         self.step_frequency = self.default_step_frequency
@@ -97,16 +109,16 @@ class StepperMotor:
 
         """
         if setting is not None:
-            if self.reversed:
+            if setting:
                 GPIO.output(self.pin_direction, GPIO.LOW)
             else:
                 GPIO.output(self.pin_direction, GPIO.HIGH)
             self.reversed = setting
         else:
-            if not self.reversed:
-                GPIO.output(self.pin_direction, GPIO.LOW)
-            else:
+            if self.reversed:
                 GPIO.output(self.pin_direction, GPIO.HIGH)
+            else:
+                GPIO.output(self.pin_direction, GPIO.LOW)
             self.reversed = not self.reversed
 
     def calibrate(self):
@@ -115,6 +127,7 @@ class StepperMotor:
         # check if switch is already pressed, if so then don't move
         if GPIO.input(self.pin_calibration_microswitch) == GPIO.HIGH or GPIO.input(self.pin_safety_microswitch) == GPIO.HIGH:
             self.stop_step_event.set()
+            # todo move few steps away and recalibrate
             return
         if self.pin_calibration_microswitch is not None:
             self.reverse(False)
