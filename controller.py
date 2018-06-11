@@ -120,7 +120,7 @@ class Controller:
                 self.steppermotor.start_step()
 
             # Set the step frequency
-            self.steppermotor.set_frequency(abs(output))
+            self.steppermotor.frequency = abs(output)
 
             first_run = False
 

@@ -47,3 +47,6 @@ def add_event_detect(*args, **kwargs):
 
 def remove_event_detect(channel):
     pass
+
+def PWM(*args, **kwargs):
+    pass
