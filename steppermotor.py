@@ -34,14 +34,19 @@ class StepperMotor:
         self.step_counter = 0  # Number of steps away from zero position
 
         self.name = name
+        
+        self.lock_step_frequency = threading.Lock()
 
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
+        
         GPIO.setup(self.pin_step, GPIO.OUT, initial=GPIO.LOW)
+        self.step_pwm = GPIO.PWM(self.pin_step, self.default_step_frequency)
         GPIO.setup(self.pin_direction, GPIO.OUT, initial=GPIO.LOW)
 
         # Setup interrupts for limit switches if used
+        self.ignore_interrupt = False
         if self.pin_calibration_microswitch is not None and self.pin_safety_microswitch is not None:
             GPIO.setup(self.pin_calibration_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
             GPIO.setup(self.pin_safety_microswitch, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -53,14 +58,10 @@ class StepperMotor:
                                   bouncetime=self.microswitch_bouncetime)
             
     def enable_interrupts(self):
-        GPIO.add_event_detect(self.pin_calibration_microswitch, GPIO.RISING, callback=self.microswitch_callback,
-                                  bouncetime=self.microswitch_bouncetime)
-        GPIO.add_event_detect(self.pin_safety_microswitch, GPIO.RISING, callback=self.microswitch_callback,
-                                  bouncetime=self.microswitch_bouncetime)
+        self.ignore_interrupt = False
     
     def disable_interrupts(self):
-        GPIO.remove_event_detect(self.pin_calibration_microswitch)
-        GPIO.remove_event_detect(self.pin_safety_microswitch)
+        self.ignore_interrupt = True
 
     def _step(self, count=None):
         """Keep stepping until self.stop_step_event is set, or until count steps have been made if count is not None.
@@ -73,11 +74,21 @@ class StepperMotor:
         """
         current_step_counter = 0
         while not self.stop_step_event.is_set():
+            freq = self.async_get_frequency()
             # Keep stepping until stop_step is called
             GPIO.output(self.pin_step, GPIO.HIGH)
-            time.sleep(1/(2*self.step_frequency))
+            #time.sleep(1/(2 * freq))
+            t = time.time()
+            while True:
+                if t - time.time() > 1/(2*freq):
+                    break
+                time.sleep(1/40)
             GPIO.output(self.pin_step, GPIO.LOW)
-            time.sleep(1 / (2 * self.step_frequency))
+            #time.sleep(1 /(2 * freq))
+            while True:
+                if t - time.time() > 1/(2*freq):
+                    break
+                time.sleep(1/40)
             if not self.reversed:
                 self.step_counter += 1
             else:
@@ -88,16 +99,32 @@ class StepperMotor:
 
     def start_step(self, count=None):
         """Start stepping"""
-        self.reverse(False)
         self.stop_step_event.clear()
         self.microswitch_hit_event.clear()
-        self.step_frequency = self.default_step_frequency
-        threading.Thread(target=self._step, args=[count]).start()
+        self.step_pwm.start(50)
+        # threading.Thread(target=self._step, args=[count]).start()
 
     def stop_step(self):
         """Stop stepping"""
         self.stop_step_event.set()
+        self.step_pwm.stop()
         self.microswitch_hit_event.clear()
+        
+    def async_set_frequency(self, value):
+        self.step_pwm.ChangeFrequency(value)
+        
+        #self.lock_step_frequency.acquire()
+        #self.step_frequency = value
+        #self.lock_step_frequency.release()
+        
+    def set_duty_cycle(self, value):
+        self.step_pwm.ChangeDutyCycle(value)
+    
+    def async_get_frequency(self):
+        self.lock_step_frequency.acquire()
+        value = self.step_frequency
+        self.lock_step_frequency.release()
+        return value        
 
     def reverse(self, setting=None):
         """
@@ -131,20 +158,27 @@ class StepperMotor:
             return
         if self.pin_calibration_microswitch is not None:
             self.reverse(False)
+            self.step_frequency = self.default_step_frequency
             self.start_step()
             if self.microswitch_hit_event.wait(self.calibration_timeout):
                 self.step_counter = 0
                 #self.microswitch_hit_event.clear()
             else:
                 self.stop_step()
-                raise CalibrationError('Timed out waiting for microswitch during calibration.')
+                messagebox.showerror('FOUT', 'Fout tijdens calibratie: Timeout (kalibreren duurt te lang)')
         else:
-            raise CalibrationError('No microswitch setup for this steppermotor')
+            messagebox.showerror('FOUT', 'Voro deze motor is geen eindschakelaar ingesteld en er kan niet worden gekalibreert')
 
     def microswitch_callback(self, channel):
         """Interrupt callback. This function is called when the microswitch is pressed."""
-        self.microswitch_hit_event.set()
-        print("interrupt {}".format(self.name))
+        if self.ignore_interrupt:
+            return
+        # Check for ghost interrupt
+        time.sleep(0.01)
+        if GPIO.input(self.pin_calibration_microswitch) == GPIO.HIGH or GPIO.input(self.pin_safety_microswitch) == GPIO.HIGH:
+            self.microswitch_hit_event.set()
+            self.stop_step()
+            print("interrupt {} {}".format(self.name, channel))
 
 
 class CalibrationError(BaseException):
