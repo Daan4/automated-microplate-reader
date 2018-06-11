@@ -8,6 +8,7 @@ class StepperMotor:
     def __init__(self, pin_step, pin_direction, pin_calibration_microswitch, pin_safety_microswitch,
                  step_frequency, microswitch_bouncetime=300, calibration_timeout=20, name=""):
         """Interfaces with the steppermotors and limit switches.
+
         Args:
             pin_step: GPIO pin number for step pulse output
             pin_direction: GPIO pin number for direction output
@@ -61,6 +62,7 @@ class StepperMotor:
 
     def start_step(self, count=None):
         """Start stepping
+
         Args:
             count: the number of steps to make. Since using the built in pwm this is only approximated by setting timer,
                     instead of actually counting the steps."""
@@ -84,6 +86,7 @@ class StepperMotor:
 
     def reverse(self, setting):
         """Reverse motor direction
+
         Args:
             setting: optional set to True or False to choose a direction, if None the direction is inverted
         """
