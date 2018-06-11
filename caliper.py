@@ -1,10 +1,13 @@
 import RPi.GPIO as GPIO
 import time
 from queue import Queue
+from collections import deque
+from bisect import insort, bisect_left
+from itertools import islice
 
 
 class Caliper:
-    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None, name="", max_delta_between_samples=10):
+    def __init__(self, pin_data, pin_clock, pin_zero, clock_bouncetime=1, pause_time=50, pin_debug=None, name="", median_filter_max_error=10, median_filter_window_size=10):
         """Read a bit on the data pin every time a clock pulse is received.
         Return the 24-bit number that gets sent roughly every 100-150ms by the digital caliper.
 
@@ -24,7 +27,6 @@ class Caliper:
         self.clock_bouncetime = clock_bouncetime
         self.pause_time = pause_time
         self.pin_debug = pin_debug
-        self.max_delta = max_delta_between_samples
         self.name = name
 
         # data buffer for current data packet
@@ -37,8 +39,10 @@ class Caliper:
         # Ideally the reading should always processed before the next one is ready.
         self.reading_queue = Queue(1)
 
-        # keep track of previous reading
-        self.previous_sample = 0
+        # keep track of previous readings for median filter
+        self.median_filter_samples = [0 for _ in range(median_filter_window_size)]
+        self.median_filter_max_error = median_filter_max_error
+        self.median_filter_window_size = median_filter_window_size
 
         # Setup gpio
         GPIO.setmode(GPIO.BCM)
@@ -48,14 +52,21 @@ class Caliper:
         GPIO.setup(self.pin_zero, GPIO.OUT)
         if self.pin_debug is not None:
             GPIO.setup(self.pin_debug, GPIO.OUT)
+        
+        self.ignore_interrupt = True
+        GPIO.add_event_detect(self.pin_clock, GPIO.RISING, callback=self.clock_callback)
 
     def start_listening(self):
         # Enable clock interrupt
-        GPIO.add_event_detect(self.pin_clock, GPIO.RISING, callback=self.clock_callback)
+        self.ignore_interrupt = False
+        
+        
+    def reset_median_filter(self):
+        self.median_filter_samples = [0 for _ in range(self.median_filter_window_size)]
 
     def stop_listening(self):
         # Disable clock interrupt
-        GPIO.remove_event_detect(self.pin_clock)
+        self.ignore_interrupt = True
         # Clear queue (otherwise on the next process start it might start with an old reading in the queue?)
         with self.reading_queue.mutex:
             self.reading_queue.queue.clear()
@@ -94,6 +105,8 @@ class Caliper:
         Data is sent in 24-bit bursts every ~100-150ms.
         If listening started mid-burst the data from that first burst will be discarded.
         """
+        if self.ignore_interrupt:
+            return
         if self.pin_debug is not None:
             GPIO.output(self.pin_debug, GPIO.HIGH)
         value = GPIO.input(self.pin_data)
@@ -123,12 +136,18 @@ class Caliper:
         Returns: filtered sample
 
         """
-        if self.previous_sample is not None and abs(sample - self.previous_sample) > self.max_delta:
+        # Calculate median
+        sorted_list = sorted(self.median_filter_samples)
+        median = sorted_list[self.median_filter_window_size // 2]
+        
+        if abs(sample - median) > self.median_filter_max_error:
             print("filtered {} {}".format(self.name, sample))
-            return self.previous_sample
+            print("median, samples {}, {}".format(median, sorted_list))
+            return None
         else:
-            self.previous_sample = sample
-            return sample
+            self.median_filter_samples.append(sample)
+            self.median_filter_samples = self.median_filter_samples[1:]
+            return sample      
 
 
 def bit_list_to_decimal(bit_list):
