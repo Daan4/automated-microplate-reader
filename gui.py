@@ -1,24 +1,22 @@
 import tkinter as tk
 from main import start_process, stop_process, pause_process, z_move_camera
 from PIL import ImageTk, Image
-import os
 import threading
 from globals import DROPDOWN_OPTIONS_DICT
 
 
 class AutomatedMicroplateReaderApplication(tk.Frame):
     def __init__(self, master):
+        """Tkinter frame for the automated microplate reader user interface"""
         super().__init__(master)
         self.grid()
 
-        # Register entry validation function to only allow int
+        # Register entry validation function that only allows positive integers
         self.check_num_zsteps = (self.register(self.validate_int), '%P')
 
         self.create_widgets()
 
-        # Set startup values
-        # todo use some logo / text ?
-        #self.update_image(os.path.join(os.path.dirname(__file__), 'testimage.jpg'))
+        # Set initial status text
         self.update_status('STANDBY')
 
     def create_widgets(self):
@@ -57,40 +55,35 @@ class AutomatedMicroplateReaderApplication(tk.Frame):
         self.entry_num_zsteps = tk.Entry(self, textvariable=self.stringvar_num_zsteps,
                                          validate='key', validatecommand=self.check_num_zsteps)
         self.entry_num_zsteps.grid(row=4, column=1)
-        self.button_z_up = tk.Button(self, text='Omhoog', command=lambda: z_move_camera(int(self.stringvar_num_zsteps.get())))
+        self.button_z_up = tk.Button(self, text='Omhoog',
+                                     command=lambda: z_move_camera(int(self.stringvar_num_zsteps.get())))
         self.button_z_up.grid(row=5, column=0)
-        self.button_z_down = tk.Button(self, text='Omlaag', command=lambda: z_move_camera(-int(self.stringvar_num_zsteps.get())))
+        self.button_z_down = tk.Button(self, text='Omlaag',
+                                       command=lambda: z_move_camera(-int(self.stringvar_num_zsteps.get())))
         self.button_z_down.grid(row=5, column=1)
 
     def _start_pressed(self):
-        """Called when the start button is pressed."""
+        """Called when the start button is pressed. start_process is called in it's own thread to not block the gui"""
         threading.Thread(target=start_process, args=[DROPDOWN_OPTIONS_DICT[self.stringvar_well_plate.get()]]).start()
 
     def update_image(self, image_path):
         """
-
         Update the image shown on screen, downscaling it to 960 width x 540 height
 
         Args:
             image_path: the path to the image to display
-
-        Returns:
-
         """
         img = ImageTk.PhotoImage(Image.open(image_path).resize((960, 520), Image.ANTIALIAS))
         self.image_panel.grid_forget()
         self.image_panel = tk.Label(self, image=img)
-        self.image_panel.image = img
+        self.image_panel.image = img  # You need to keep this explicit reference for it to work
         self.image_panel.grid(row=1, column=3, rowspan=999)
 
     def update_status(self, status):
-        """
-        Update the status shown on screen
+        """Update the status text shown on screen
 
         Args:
             status: the status text to show
-
-        Returns:
 
         """
         self.status_stringvar.set(status)
