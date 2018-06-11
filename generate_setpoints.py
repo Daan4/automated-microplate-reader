@@ -1,18 +1,16 @@
 # run to generate testsetpoints.csv
-# baased on draawing 677180.pdf
 
 
 def generate_setpoints(initial_offset_y, initial_offset_x, offset_x, offset_y, rows, columns, hysteresis_offset):
-    """
+    """Write setpoints to testsetpoints.csv
 
     Args:
-        initial_offset_x: initial offset from corner to well center a1
-        initial_offset_y: initial offset from corner to well center a1
-        offset_x: distance between wells
-        offset_y: distance between wells
-
-    Returns:
-
+        initial_offset_x: initial offset from corner to well center a1 -- for now this is hardcoded in globals.py, leave at 0
+        initial_offset_y: initial offset from corner to well center a1 -- for now this is hardcoded in globals.py, leave at 0
+        offset_x: distance between wells in x direction
+        offset_y: distance between wells in y direction
+        rows: number of wells in y direction
+        columns: number of wells in x direction
     """
 
     with open('testsetpoints.csv', 'w') as f:
@@ -20,7 +18,7 @@ def generate_setpoints(initial_offset_y, initial_offset_x, offset_x, offset_y, r
             lines_buffer = []
             for x in range(columns):
                 # Compensate hysteresis on x axis by changing the setpoints
-                if y % 2 != 0 and x != columns-1:
+                if y % 2 != 0 and x != columns - 1:
                     setpoint_x = round(initial_offset_x + x * offset_x + hysteresis_offset, 2)
                 elif y % 2 == 0 and (x == 0 and y != 0):
                     setpoint_x = round(initial_offset_x + x * offset_x + hysteresis_offset, 2)
@@ -35,5 +33,5 @@ def generate_setpoints(initial_offset_y, initial_offset_x, offset_x, offset_y, r
 
 
 if __name__ == '__main__':
-    generate_setpoints(0, 0, 108/12, 108/12, 8, 12, 2.5)
-    #generate_setpoints(0, 0, 99/12, 99/12, 8, 12)
+    # settings for cellstar 96 well plate
+    generate_setpoints(0, 0, 108 / 12, 108 / 12, 8, 12, 2.5)

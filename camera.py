@@ -3,26 +3,25 @@ from picamera.exc import PiCameraError
 import time
 import os
 
-class Camera:
-    def __init__(self, exposure_time=1):
-        """
 
-        Args:
-            exposure_time: Time to wait after taking a picture before continuing in seconds
-        """
+class Camera:
+    def __init__(self):
+        """Interfaces to a raspberry pi camera to take pictures and save them to a given path."""
         try:
             self.camera = PiCamera()
-            #self.camera.start_preview()
-            #while True:
-            #    time.sleep(1)
         except PiCameraError as e:
             # Camera not connected
             self.camera = None
-        self.exposure_time = exposure_time
 
     def take_photo(self, filename=None):
-        """Take a photo and return the stored image path when ready"""
-        # todo better image file names, maybe structured in folder per well plate and named per well
+        """Take a photo and return the stored image path when ready
+
+        Args:
+            filename: the name of the photo file.
+
+        Returns:
+            the filepath of the saved photo file
+        """
         if not os.path.exists('pics'):
             os.mkdir('pics')
         if filename is None:
@@ -32,4 +31,5 @@ class Camera:
 
         if self.camera is not None:
             self.camera.capture(image_path)
+
         return image_path
