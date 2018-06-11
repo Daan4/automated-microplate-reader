@@ -47,10 +47,17 @@ class Controller:
             capture_data: True to save timestamps and position samples to self.captured_data
 
         """
+        first_run = True
         while not self.stop_loop_event.is_set():
             # Wait for the next sensor reading
             try:
+                failed = False
                 position = self.caliper.get_reading()
+                while position is None:
+                    failed = True
+                    self.steppermotor.set_duty_cycle(0)
+                    position = self.caliper.get_reading()
+                    
             except queue.Empty:
                 # Timed out waiting for sensor reading
                 # Check if the process was stopped while waiting for sensor reading
@@ -58,6 +65,9 @@ class Controller:
                     break
                 else:
                     raise TimeoutError("Controller {} timed out waiting for sensor reading".format(self.name))
+            finally:
+                if failed:
+                    self.steppermotor.set_duty_cycle(50)
             if capture_data:
                 self.captured_data.append((time.time() - start_time, position))
             error = self.setpoint - position
@@ -66,7 +76,7 @@ class Controller:
             if abs(error) < self.error_margin:
                 if self.settling and time.time() - self.start_settling_time > self.settling_time:
                     # If we reached the goal position for a given settling time -> stop the control loop
-                    print("stop {}".format(self.name))
+                    print("stop {} {}".format(self.name, position))
                     self.stop()
                     break
                 elif not self.settling:
@@ -80,7 +90,7 @@ class Controller:
             output = self.pid(feedback=error)
 
             # Use the controller output to control the stepper motor
-            if self.steppermotor.stop_step_event.is_set():
+            if self.steppermotor.stop_step_event.is_set() and not first_run:
                 # The steppermotor stopped unexpectedly -> Limit switch was hit
                 # Stop the entire process
                 # Importing stop_process here to prevent circular import
@@ -99,26 +109,29 @@ class Controller:
                 output = self.step_frequency_max
             elif abs(output) < self.step_frequency_min:
                 output = self.step_frequency_min
-            self.steppermotor.step_frequency = abs(output)
+            
+            if first_run:
+                self.steppermotor.start_step()
+            self.steppermotor.async_set_frequency(abs(output))
+            
+            first_run = False
 
     def start(self, setpoint, capture=False, ignore_interrupts=False):
         """Start the control loop."""
         self.stop_loop_event.clear()
         self.caliper.start_listening()
-        self.steppermotor.start_step()
+        #self.steppermotor.start_step()
         self.setpoint = setpoint + self.setpoint_offset
         self.captured_data = []
         if ignore_interrupts:
             threading.Thread(target=self.temp_disable_interrupts).start()
-        threading.Thread(target=self._control_loop, args=[capture, time.time()]).start()
+        self._control_loop(capture, time.time())
+        #threading.Thread(target=self._control_loop, args=[capture, time.time()]).start()
         
     def temp_disable_interrupts(self):
         """ ignore interrupts when starting """
         self.steppermotor.disable_interrupts()
-
-        # avoid circular import
         time.sleep(self.interrupt_ignore_time)
-
         self.steppermotor.enable_interrupts()
 
     def stop(self):
